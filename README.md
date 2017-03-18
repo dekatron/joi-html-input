@@ -178,6 +178,6 @@ This package is not an official part of Joi nor is it produced by any member of 
 
 ## License
 
-[BSD-3-Clause](LICENSE)
+[BSD-3-Clause](LICENSE.md)
 
 
