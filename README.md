@@ -17,7 +17,7 @@ npm install --save joi-html-input
 
 ## Sanitization
 
-To remove unwanted tags from the input you can use `.allowedTags()` to pass the input through [sanitize-html](https://www.npmjs.com/package/sanitize-html) the options object that you pass into `.allowedTags()` is passed directly to sanitize-html with out any changes so see their documention for a list of available arguments.
+To remove unwanted tags from the user input you can use `.allowedTags()` to pass the input through [sanitize-html](https://www.npmjs.com/package/sanitize-html) you can also pass an optional options object into`.allowedTags()` which is passed directly to sanitize-html with out any changes so see their documention for a list of available arguments.
 
 ```
 const htmlInput = require('joi-html-input');

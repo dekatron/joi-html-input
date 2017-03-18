@@ -15,6 +15,7 @@ describe('Joi.htmlInput', function() {
         ]
       }
     };
+
     it('should not strip allowed tags', function() {
       const htmlString = '<p>This is a <span>string</span></p>';
       const joiSchema = Joi.htmlInput().allowedTags(sanitizeConfig);
@@ -23,6 +24,7 @@ describe('Joi.htmlInput', function() {
       expect(joiValidation.error).to.be.null;
       expect(joiValidation.value).to.be.equal(htmlString);
     });
+
     it('should strip any other tags', function() {
       const dirtyHtmlString = '<div><p>This is <span>bad</span><script>alert(\'hiya\')</script></p></div>';
       const joiSchema = Joi.htmlInput().allowedTags(sanitizeConfig);
@@ -32,6 +34,7 @@ describe('Joi.htmlInput', function() {
       expect(joiValidation.error).to.be.null;
       expect(joiValidation.value).to.be.equal(cleanHtmlString);
     });
+
     it('should not strip allowed attributes', function() {
       const htmlString = '<p>This is a <span style="color: red;">string</span></p>';
       const joiSchema = Joi.htmlInput().allowedTags(sanitizeConfig);
@@ -40,11 +43,22 @@ describe('Joi.htmlInput', function() {
       expect(joiValidation.error).to.be.null;
       expect(joiValidation.value).to.be.equal(htmlString);
     });
+
     it('should strip any other attributes', function() {
       const dirtyHtmlString = '<p id="test">This is a <span class="italic" style="color: red;">string</span></p>';
       const joiSchema = Joi.htmlInput().allowedTags(sanitizeConfig);
       const joiValidation = Joi.validate(dirtyHtmlString, joiSchema);
       const cleanHtmlString = '<p>This is a <span style="color: red;">string</span></p>';
+
+      expect(joiValidation.error).to.be.null;
+      expect(joiValidation.value).to.be.equal(cleanHtmlString);
+    });
+
+    it('should strip tags based on defaults if no parameters are provided', function() {
+      const htmlString = '<p>This is a <span>string</span><script>alert(\'test\')</script></p>';
+      const joiSchema = Joi.htmlInput().allowedTags();
+      const joiValidation = Joi.validate(htmlString, joiSchema);
+      const cleanHtmlString = '<p>This is a string</p>';
 
       expect(joiValidation.error).to.be.null;
       expect(joiValidation.value).to.be.equal(cleanHtmlString);
