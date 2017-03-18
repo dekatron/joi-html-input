@@ -1,0 +1,35 @@
+{
+  "name": "joi-html-input",
+  "version": "1.0.0",
+  "description": "Joi validations for inputs that accept html",
+  "main": "lib/index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dekatron/joi-html-input.git"
+  },
+  "scripts": {
+    "test": "mocha test/index.tests.js"
+  },
+  "keywords": [
+    "joi",
+    "html"
+  ],
+  "author": "Dekatron",
+  "license": "BSD-3-Clause",
+  "bugs": {
+    "url": "https://github.com/dekatron/joi-html-input/issues"
+  },
+  "homepage": "https://github.com/dekatron/joi-html-input#readme",
+  "peerDependencies": {
+    "joi": ">=10.x.x"
+  },
+  "dependencies": {
+    "sanitize-html": "^1.14.1",
+    "string": "^3.3.3"
+  },
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "joi": ">=10.x.x",
+    "mocha": "^3.2.0"
+  }
+}
