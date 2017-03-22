@@ -5,7 +5,8 @@ A [Joi](https://www.npmjs.com/package/joi) extension for sanitizing and validati
 
 ## Installation
 
-Installation using yarn, if you're not familiar with yarn it's a faster more reliable drop-in replacement for npm [read more here](https://yarnpkg.com/)
+Installation using yarn:
+If you're not familiar with yarn it's a faster more reliable drop-in replacement for npm [read more here](https://yarnpkg.com/)
 ```
 yarn add joi-html-input
 ```
@@ -48,11 +49,11 @@ console.log(joiValidation);
 
 ```
 
-## Display Length
+## Display Length, Min & Max
 
-The `.length()`,`.min()` and `.max()` methods built in to Joi's `.string()` will return the actual length of the string that is passed to them. Becuase htmlInputs extends the built in Joi `.string()` you can use these methods if you want to validate that you're not going to exceed a character limit in your database or if you want to ensure that users are no able to submit an unlimited amount of HTML with their content.
+The `.length()` `.min()` and `.max()` methods built in to Joi's `.string()` will return the actual length of the string that is passed to them. Becuase htmlInputs extends the built in Joi `.string()` you can use these methods if you want to validate that you're not going to exceed a character limit in your database or if you want to ensure that users are no able to submit an unlimited amount of HTML with their content.
 
-However in addition to the built-in string methods htmlInputs also include 3 additional methods `.displayLength()`,`.displayMin()` and `.displayMax()` which can be used to validate the apparent length of the text when viewed in a web browser. This can be useful if you are using an WYSIWYG editor like TinyMCE or CKEditor and want to set a character limit but you don't want the generated html for bulletpoints, links or styling to count towards that character limit. These 3 menthod will also account for html entities such as `&nbsp;` so that they only count as single characters.
+However in addition to the built-in string methods htmlInputs also include 3 additional methods `.displayLength()` `.displayMin()` and `.displayMax()` which can be used to validate the apparent length of the text when viewed in a web browser. This can be useful if you are using an WYSIWYG editor like TinyMCE or CKEditor and want to set a character limit but you don't want the generated html for bulletpoints, links or styling to count towards that character limit. These 3 menthod will also account for html entities such as `&nbsp;` so that they only count as single characters.
 
 ```
 const htmlInput = require('./lib/index.js');
@@ -129,6 +130,27 @@ console.log(joiValidation);
 /* Expected output:
 { error: null,
   value: '<p>This is a string</p>' }
+*/
+
+```
+
+Character Encoding:
+
+```
+const htmlInput = require('joi-html-input');
+const Joi = require('joi').extend(htmlInput);
+
+// .displayLength() .displayMin() and .displayMax() all the optional second character encoding parameter
+// Note that \u00A9 will count as 2 character when using utf8 character encoding
+const htmlString = '<p id="test">This is a utf8 character \u00A9</p>';
+const joiSchema = Joi.htmlInput().allowedTags().displayLength(27, 'utf8');
+const joiValidation = Joi.validate(htmlString, joiSchema);
+
+console.log(joiValidation);
+
+/* Expected output:
+{ error: null,
+  value: '<p>This is a string ©</p>' }
 */
 
 ```

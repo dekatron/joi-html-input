@@ -79,7 +79,7 @@ describe('Joi.htmlInput', function() {
       const htmlString = '<p>This is an <span style="color: red;">html string</span></p>';
       const joiSchema = Joi.htmlInput().displayLength(23);
       const joiValidation = Joi.validate(htmlString, joiSchema);
-      const joiErrorMsg = '"value" Must be exactly 23 characters long but it was actually 22 characters long';
+      const joiErrorMsg = '"value" length must be 23 characters long';
 
       expect(joiValidation.error).to.not.be.null;
       expect(joiValidation.error.details.pop().message).to.be.equal(joiErrorMsg);
@@ -90,7 +90,7 @@ describe('Joi.htmlInput', function() {
       const htmlString = '<p>This is an <span style="color: red;">html string</span></p>';
       const joiSchema = Joi.htmlInput().displayLength(21);
       const joiValidation = Joi.validate(htmlString, joiSchema);
-      const joiErrorMsg = '"value" Must be exactly 21 characters long but it was actually 22 characters long';
+      const joiErrorMsg = '"value" length must be 21 characters long';
 
       expect(joiValidation.error).to.not.be.null;
       expect(joiValidation.error.details.pop().message).to.be.equal(joiErrorMsg);
@@ -100,6 +100,15 @@ describe('Joi.htmlInput', function() {
     it('should account for html entities', function() {
       const htmlString = '<p>This&nbsp;is&nbsp;an&nbsp;<span style="color: red;">html&nbsp;string</span></p>';
       const joiSchema = Joi.htmlInput().displayLength(22);
+      const joiValidation = Joi.validate(htmlString, joiSchema);
+
+      expect(joiValidation.error).to.be.null;
+      expect(joiValidation.value).to.be.equal(htmlString);
+    });
+
+    it('should enforce a limit using byte count', function() {
+      const htmlString = '<p>Test \u00A9</p>';
+      const joiSchema = Joi.htmlInput().displayLength(7, 'utf8');
       const joiValidation = Joi.validate(htmlString, joiSchema);
 
       expect(joiValidation.error).to.be.null;
@@ -121,7 +130,7 @@ describe('Joi.htmlInput', function() {
       const htmlString = '<p>This is an <span style="color: red;">html string</span></p>';
       const joiSchema = Joi.htmlInput().displayMin(23);
       const joiValidation = Joi.validate(htmlString, joiSchema);
-      const joiErrorMsg = '"value" Must be a minimum of 23 characters long but it was actually 22 characters long';
+      const joiErrorMsg = '"value" length must be at least 23 characters long';
 
       expect(joiValidation.error).to.not.be.null;
       expect(joiValidation.error.details.pop().message).to.be.equal(joiErrorMsg);
@@ -141,12 +150,23 @@ describe('Joi.htmlInput', function() {
       const htmlString = '<p>This&nbsp;is&nbsp;an&nbsp;<span style="color: red;">html&nbsp;string</span></p>';
       const joiSchema = Joi.htmlInput().displayMin(23);
       const joiValidation = Joi.validate(htmlString, joiSchema);
-      const joiErrorMsg = '"value" Must be a minimum of 23 characters long but it was actually 22 characters long';
+      const joiErrorMsg = '"value" length must be at least 23 characters long';
 
       expect(joiValidation.error).to.not.be.null;
       expect(joiValidation.error.details.pop().message).to.be.equal(joiErrorMsg);
       expect(joiValidation.value).to.be.equal(htmlString);
-    })
+    });
+
+    it('should enforce a minimum using byte count', function() {
+      const htmlString = '<p>Test \u00A9</p>';
+      const joiSchema = Joi.htmlInput().displayMin(8, 'utf8');
+      const joiValidation = Joi.validate(htmlString, joiSchema);
+      const joiErrorMsg = '"value" length must be at least 8 characters long';
+
+      expect(joiValidation.error).to.not.be.null;
+      expect(joiValidation.error.details.pop().message).to.be.equal(joiErrorMsg);
+      expect(joiValidation.value).to.be.equal(htmlString);
+    });
   });
 
   describe('Joi.htmlInput.displayMax', function() {
@@ -172,7 +192,7 @@ describe('Joi.htmlInput', function() {
       const htmlString = '<p>This is an <span style="color: red;">html string</span></p>';
       const joiSchema = Joi.htmlInput().displayMax(21);
       const joiValidation = Joi.validate(htmlString, joiSchema);
-      const joiErrorMsg = '"value" Must be a maximum of 21 characters long but it was actually 22 characters long';
+      const joiErrorMsg = '"value" length must be less than or equal to 21 characters long';
 
       expect(joiValidation.error).to.not.be.null;
       expect(joiValidation.error.details.pop().message).to.be.equal(joiErrorMsg);
@@ -182,6 +202,15 @@ describe('Joi.htmlInput', function() {
     it('should account for html entities', function() {
       const htmlString = '<p>This&nbsp;is&nbsp;an&nbsp;<span style="color: red;">html&nbsp;string</span></p>';
       const joiSchema = Joi.htmlInput().displayMax(22);
+      const joiValidation = Joi.validate(htmlString, joiSchema);
+
+      expect(joiValidation.error).to.be.null;
+      expect(joiValidation.value).to.be.equal(htmlString);
+    });
+
+    it('should enforce a maximum using byte count', function() {
+      const htmlString = '<p>Test \u00A9</p>';
+      const joiSchema = Joi.htmlInput().displayLength(7, 'utf8');
       const joiValidation = Joi.validate(htmlString, joiSchema);
 
       expect(joiValidation.error).to.be.null;
