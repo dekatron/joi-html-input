@@ -6,6 +6,7 @@ A [Joi](https://www.npmjs.com/package/joi) extension for sanitizing and validati
 ## Installation
 
 Installation using yarn:
+
 If you're not familiar with yarn it's a faster more reliable drop-in replacement for npm [read more here](https://yarnpkg.com/)
 ```
 yarn add joi-html-input
