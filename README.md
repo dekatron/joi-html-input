@@ -175,9 +175,9 @@ console.log(joiValidation);
 
 /* Expected output:
 { error:
-   { ValidationError: "value" Must be a minimum of 20 characters long but it was actually 16 characters long
+   { ValidationError: "value" length must be at least 20 characters long
        at Object.exports.process (/var/www/joi-html-input/node_modules/joi/lib/errors.js:154:19)
-       at type._validateWithOptions (/var/www/joi-html-input/node_modules/joi/lib/any.js:607:31)
+       at type._validateWithOptions (/var/www/joi-html-input/node_modules/joi/lib/any.js:629:31)
        at root.validate (/var/www/joi-html-input/node_modules/joi/lib/index.js:121:23)
        at Object.<anonymous> (/var/www/joi-html-input/test.js:11:27)
        at Module._compile (module.js:570:32)
