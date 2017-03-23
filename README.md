@@ -119,7 +119,6 @@ console.log(results);
   value: '<div><h1 class="align-center"></h1></div>' }
 */
 ```
-Additionally `.displayMin()` also has support for an optional encoding parameter just like `Joi.string().length()` here is an example.
 
 ### .displayMax(limit, [encoding])
 
