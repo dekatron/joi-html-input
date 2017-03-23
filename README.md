@@ -122,6 +122,8 @@ console.log(results);
 
 ### .displayMax(limit, [encoding])
 
+Validates the maximum number of characters in a string ignoring HTML tags and converting HTML entities to characters. The return value remains unchanged.
+
 ```
 const htmlInput = require('joi-html-input');
 const Joi = require('joi').extend(htmlInput);
