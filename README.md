@@ -9,198 +9,235 @@ Installation using yarn:
 
 If you're not familiar with yarn it's a faster more reliable drop-in replacement for npm [read more here](https://yarnpkg.com/)
 ```
-yarn add joi-html-input
+$ yarn add joi-html-input
 ```
 
 Installation using npm
 ```
-npm install --save joi-html-input
+$ npm install --save joi-html-input
 ```
 
 ## Sanitization
 
-To remove unwanted tags from the user input you can use `.allowedTags()` to pass the input through [sanitize-html](https://www.npmjs.com/package/sanitize-html) you can also pass an optional options object into`.allowedTags()` which is passed directly to sanitize-html with out any changes so see their documention for a list of available arguments.
+To remove unwanted tags from the user input you can use `.allowedTags()` to pass the input through [sanitize-html](https://www.npmjs.com/package/sanitize-html). By default this will strip things like `<script>` and `<iframe>` tags but leave in most other common tags.
 
 ```
 const htmlInput = require('joi-html-input');
 const Joi = require('joi').extend(htmlInput);
 
-const sanitizeConfig = {
-  'allowedTags': [
-    'p',
-    'span'
-  ],
-  'allowedAttributes': {
-    'span': [
-      'style'
-    ]
-  }
-};
-
-const htmlString = '<p id="test">This is a <span class="italic" style="color: red;">string</span></p>';
-const joiSchema = Joi.htmlInput().allowedTags(sanitizeConfig);
-const joiValidation = Joi.validate(htmlString, joiSchema);
-
-console.log(joiValidation);
-
-/* Expected output:
-{ error: null,
-  value: '<p>This is a <span style="color: red;">string</span></p>' }
-*/
-
-```
-
-## Display Length, Min & Max
-
-The `.length()` `.min()` and `.max()` methods built in to Joi's `.string()` will return the actual length of the string that is passed to them. Becuase htmlInputs extends the built in Joi `.string()` you can use these methods if you want to validate that you're not going to exceed a character limit in your database or if you want to ensure that users are no able to submit an unlimited amount of HTML with their content.
-
-However in addition to the built-in string methods htmlInputs also include 3 additional methods `.displayLength()` `.displayMin()` and `.displayMax()` which can be used to validate the apparent length of the text when viewed in a web browser. This can be useful if you are using an WYSIWYG editor like TinyMCE or CKEditor and want to set a character limit but you don't want the generated html for bulletpoints, links or styling to count towards that character limit. These 3 menthod will also account for html entities such as `&nbsp;` so that they only count as single characters.
-
-```
-const htmlInput = require('./lib/index.js');
-const Joi = require('joi').extend(htmlInput);
-
-const sanitizeConfig = {
-  'allowedTags': [
-    'p',
-    'span'
-  ],
-  'allowedAttributes': {
-    'span': [
-      'style'
-    ]
-  }
-};
-
-const htmlString = '<p id="test">This&nbsp;is&nbsp;a&nbsp;<span class="italic" style="color: red;">string</span></p>';
-
-// All the validations below will pass because when you strip the html above and convert the htmlentities to their charcters the string length is 16
-
-const lengthSchema = Joi.htmlInput().allowedTags(sanitizeConfig).displayLength(16);
-const lengthValidation = Joi.validate(htmlString, lengthSchema);
-console.log(lengthValidation);
-
-const minSchema = Joi.htmlInput().allowedTags(sanitizeConfig).displayMin(16);
-const minValidation = Joi.validate(htmlString, minSchema);
-console.log(minValidation);
-
-const maxSchema = Joi.htmlInput().allowedTags(sanitizeConfig).displayMax(16);
-const maxValidation = Joi.validate(htmlString, maxSchema);
-console.log(maxValidation);
-```
-
-## Additional Examples
-
-Basic usage:
-
-```
-const htmlInput = require('joi-html-input');
-const Joi = require('joi').extend(htmlInput);
-
-const htmlString = '<p id="test">This is a <span class="italic" style="color: red;">string</span></p>';
+const htmlString = '<div>Test<script>alert(\'test\');</script></div>';
 const joiSchema = Joi.htmlInput().allowedTags();
-const joiValidation = Joi.validate(htmlString, joiSchema);
+const results = Joi.validate(htmlString, joiSchema);
 
-console.log(joiValidation);
+console.log(results);
 
 /* Expected output:
-{ error: null,
-  value: '<p>This is a string</p>' }
+{ error: null, value: '<div>Test</div>' }
 */
 
 ```
 
-Sanitization and validation:
+If you want more control over what html tags and attributes are allowed you can pass an options object to `.allowedTags()` which will be passed directly to [sanitize-html](https://www.npmjs.com/package/sanitize-html) so see thier documentation for details but here is an example.
 
 ```
 const htmlInput = require('joi-html-input');
 const Joi = require('joi').extend(htmlInput);
 
-const htmlString = '<p id="test">This is a <span class="italic" style="color: red;">string</span></p>';
+const sanitizeConfig = {
+  'allowedTags': [
+    'h1',
+    'span'
+  ],
+  'allowedAttributes': {
+    'span': [
+      'style'
+    ]
+  }
+};
 
-const joiSchema = Joi
-  .htmlInput()
-  .allowedTags()
-  .max(100)
-  .displayMax(20);
+const htmlString = '<h1><span class="align-left" style="color: red;">Test Link</span></h1>';
 
-const joiValidation = Joi.validate(htmlString, joiSchema);
+const joiSchema = Joi.htmlInput().allowedTags(sanitizeConfig);
+const results = Joi.validate(htmlString, joiSchema);
 
-console.log(joiValidation);
+console.log(results);
 
 /* Expected output:
 { error: null,
-  value: '<p>This is a string</p>' }
+  value: '<h1><span style="color: red;">Test Link</span></h1>' }
 */
-
 ```
 
-Character Encoding:
+
+## Additional Methods
+
+`.htmlInput()` extends the builtin `Joi.string()` method so you can use any of the built in string methods including `.length()` `.min()` and `.max()` and they will work the same as you would expect when using `Joi.string()` these could be useful if you want to validate the maximum length of a string so that you don't exceed a character limit in your database however you may run into problems if you are using a WYSIWYG editor like TinyMCE or CKEditor and want to set a character limit but you don't want the generated html for bulletpoints, links or styling to count towards that character limit.
+
+To help you validate your HTML strings based on the actual length they will be when displayed in the browser `.htmlInput()` provides several methods. These menthods will also account for html entities such as `&nbsp;` so that they only count as single character.
+
+The tag stripping and the decoding of HTML entities for these methods is provided by the [string](https://www.npmjs.com/package/string) package.
+
+### .displayLength(limit, [encoding])
+
+Validates the length of a string ignoring HTML tags and converting HTML entities to characters. The return value remains unchanged.
 
 ```
 const htmlInput = require('joi-html-input');
 const Joi = require('joi').extend(htmlInput);
 
-// .displayLength() .displayMin() and .displayMax() all the optional second character encoding parameter
-// Note that \u00A9 will count as 2 character when using utf8 character encoding
-const htmlString = '<p id="test">This is a utf8 character \u00A9</p>';
-const joiSchema = Joi.htmlInput().allowedTags().displayLength(27, 'utf8');
-const joiValidation = Joi.validate(htmlString, joiSchema);
+const htmlString = '<div><h1 class="align-center">Test Heading</h1></div>';
+const joiSchema = Joi.htmlInput().displayLength(12);
+const results = Joi.validate(htmlString, joiSchema);
 
-console.log(joiValidation);
+console.log(results);
 
 /* Expected output:
 { error: null,
-  value: '<p>This is a string ©</p>' }
+  value: '<div><h1 class="align-center">Test Heading</h1></div>' }
 */
-
 ```
 
-Minimum length error:
+### .displayMin(limit, [encoding])
+
+Validates the minimum number of characters in a string ignoring HTML tags and converting HTML entities to characters. The return value remains unchanged.
 
 ```
 const htmlInput = require('joi-html-input');
 const Joi = require('joi').extend(htmlInput);
 
-const htmlString = '<p id="test">This is a <span class="italic" style="color: red;">string</span></p>';
+const htmlString = '<div><h1 class="align-center"></h1></div>';
+const joiSchema = Joi.htmlInput().displayMin(12);
+const results = Joi.validate(htmlString, joiSchema);
 
-const joiSchema = Joi
-  .htmlInput()
-  .allowedTags()
-  .displayMin(20);
-
-const joiValidation = Joi.validate(htmlString, joiSchema);
-
-console.log(joiValidation);
+console.log(results);
 
 /* Expected output:
 { error:
-   { ValidationError: "value" length must be at least 20 characters long
-       at Object.exports.process (/var/www/joi-html-input/node_modules/joi/lib/errors.js:154:19)
-       at type._validateWithOptions (/var/www/joi-html-input/node_modules/joi/lib/any.js:629:31)
-       at root.validate (/var/www/joi-html-input/node_modules/joi/lib/index.js:121:23)
-       at Object.<anonymous> (/var/www/joi-html-input/test.js:11:27)
-       at Module._compile (module.js:570:32)
-       at Object.Module._extensions..js (module.js:579:10)
-       at Module.load (module.js:487:32)
-       at tryModuleLoad (module.js:446:12)
-       at Function.Module._load (module.js:438:3)
-       at Module.runMain (module.js:604:10)
-     isJoi: true,
-     name: 'ValidationError',
-     details: [ [Object] ],
-     _object: '<p id="test">This is a <span class="italic" style="color: red;">string</span></p>',
-     annotate: [Function] },
-  value: '<p>This is a string</p>' }
+  { ValidationError: "value" is not allowed to be empty
+    ...
+  },
+  value: '<div><h1 class="align-center"></h1></div>' }
 */
 ```
+Additionally `.displayMin()` also has support for an optional encoding parameter just like `Joi.string().length()` here is an example.
+
+### .displayMax(limit, [encoding])
+
+```
+const htmlInput = require('joi-html-input');
+const Joi = require('joi').extend(htmlInput);
+
+const htmlString = '<div><h1 class="align-center">Test Heading</h1></div>';
+const joiSchema = Joi.htmlInput().displayMax(12);
+const results = Joi.validate(htmlString, joiSchema);
+
+console.log(results);
+
+/* Expected output:
+{ error: null,
+  value: '<div><h1 class="align-center">Test Heading</h1></div>' }
+*/
+```
+
+
+## Additional Examples
+
+Here are some more examples that you might find useful. If you have any suggestions for additional examples please submit them via a pull request on github.
+
+
+### Character Encoding
+
+Just like the builtin `Joi.string().length()` the `.displayLength()` `.displayMin()` and `.displayMax()` also have support for an optional encoding parameter, here is an example.
+
+```
+const htmlInput = require('joi-html-input');
+const Joi = require('joi').extend(htmlInput);
+
+const htmlString = '<div><span class="small-text">Copywrite \u00A9</span></div>';
+
+// With out utf8 character encoding the length of this string will be 16
+const joiSchema1 = Joi.htmlInput().displayLength(12);
+const results1 = Joi.validate(htmlString, joiSchema1);
+
+// So this will produce an error
+console.log(results1);
+
+/* Expected output:
+{ error:
+  { ValidationError: "value" length must be 12 characters long
+    ...
+  },
+  value: '<div><span class="small-text">Copywrite ©</span></div>' }
+*/
+
+// With utf8 character encoding the length of this string will be 12
+// Note: \u00A9 = 2 characters
+const joiSchema2 = Joi.htmlInput().displayLength(12, 'utf8');
+const results2 = Joi.validate(htmlString, joiSchema2);
+
+// So this will validate
+console.log(results2);
+
+/* Expected output:
+{ error: null,
+  value: '<div><span class="small-text">Copywrite ©</span></div>' }
+*/
+```
+
+### HTML Entities
+
+HTML entites will be decoded before the string lengths are checked so entites like `&nbsp;` will only count as 1 character.
+
+```
+const htmlInput = require('joi-html-input');
+const Joi = require('joi').extend(htmlInput);
+
+const htmlString = '<div><h1>Test&nbsp;Heading</h1></div>';
+const joiSchema = Joi.htmlInput().displayLength(12);
+const results = Joi.validate(htmlString, joiSchema);
+
+console.log(results);
+
+/* Expected output:
+{ error: null,
+  value: '<div><h1>Test&nbsp;Heading</h1></div>' }
+*/
+```
+
+### Sanitization And Validation Together
+
+All the additonal methods provided by `.htmlInput()` can be chained with other methods including those provided by Joi. Here is an example of multiple methods being used together.
+
+```
+const sanitizeConfig = {
+  'allowedTags': [
+    'h1'
+  ],
+  'allowedAttributes': {
+    'h1': [
+      'id'
+    ]
+  }
+};
+
+const htmlString = '<h1 id="headline">Test Heading<script>alert(\'Test\')</script></h1>';
+const joiSchema = Joi.htmlInput().allowedTags(sanitizeConfig).displayLength(12).max(50);
+const results = Joi.validate(htmlString, joiSchema);
+
+console.log(results);
+
+/* Expected output:
+{ error: null,
+  value: '<h1 id="headline">Test Heading</h1>' }
+*/
+```
+
 
 ## Disclaimer
 
 This package is not an official part of Joi nor is it produced by any member of the Joi team. It is not security tested, if you want to use this package in your project please read the full license first (link below) and review the code for yourself before using.
 
+
 ## License
 
 [BSD-3-Clause](LICENSE.md)
-
-
