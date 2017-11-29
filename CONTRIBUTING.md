@@ -4,7 +4,7 @@ Contributions are welcome, if you spot any bugs or security issues please let me
 
 ## Commit messages
 
-Broadly I follow the angular commit message format the details of which can be found [here](https://github.com/angular/angular.js/blob/master/CONTRIBUTING.md#commit-message-format). Basically just write a descriptive commit message that tells me what you're doing and why, additionally please prefix the title with one of the [types](https://github.com/angular/angular.js/blob/master/CONTRIBUTING.md#type) listed in the angular commit guidelines.
+Broadly I follow the angular commit message format the details of which can be found [here](https://github.com/angular/angular.js/blob/master/DEVELOPERS.md#commit-message-format). Basically just write a descriptive commit message that tells me what you're doing and why, additionally please prefix the title with one of the [types](https://github.com/angular/angular.js/blob/master/DEVELOPERS.md#type) listed in the angular commit guidelines.
 
 ## Code style
 
