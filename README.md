@@ -72,7 +72,7 @@ console.log(results)
 
 To help you validate your HTML strings based on the actual length they will be when displayed in the browser `.htmlInput()` provides several methods. These menthods will also account for html entities such as `&nbsp;` so that they only count as single character.
 
-The tag stripping and the decoding of HTML entities for these methods is provided by the [string](https://www.npmjs.com/package/string) package.
+The tag stripping for these methods is provided by [sanitize-html](https://www.npmjs.com/package/sanitize-html) and the decoding of HTML entities is provided by [html-entities](https://www.npmjs.com/package/html-entities).
 
 ### .displayLength(limit, [encoding])
 
