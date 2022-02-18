@@ -6,42 +6,40 @@ A [Joi](https://www.npmjs.com/package/joi) extension for sanitizing and validati
 ## Installation
 
 Installation using yarn:
-
-If you're not familiar with yarn it's a faster more reliable drop-in replacement for npm [read more here](https://yarnpkg.com/)
-```
+```console
 $ yarn add joi-html-input
 ```
 
-Installation using npm
-```
-$ npm install --save joi-html-input
+Installation using npm:
+```console
+$ npm install joi-html-input
 ```
 
 ## Sanitization
 
 To remove unwanted tags from the user input you can use `.allowedTags()` to pass the input through [sanitize-html](https://www.npmjs.com/package/sanitize-html). By default this will strip things like `<script>` and `<iframe>` tags but leave in most other common tags.
 
-```
-const htmlInput = require('joi-html-input');
-const Joi = require('joi').extend(htmlInput);
+```js
+const htmlInput = require('joi-html-input')
+const Joi = require('joi').extend(htmlInput)
 
-const htmlString = '<div>Test<script>alert(\'test\');</script></div>';
-const joiSchema = Joi.htmlInput().allowedTags();
-const results = Joi.validate(htmlString, joiSchema);
+const htmlString = '<div>Test<script>alert(\'test\');</script></div>'
+const joiSchema = Joi.htmlInput().allowedTags()
+const results = joiSchema.validate(htmlString)
 
-console.log(results);
+console.log(results)
 
 /* Expected output:
-{ error: null, value: '<div>Test</div>' }
+{ value: '<div>Test</div>' }
 */
 
 ```
 
 If you want more control over what html tags and attributes are allowed you can pass an options object to `.allowedTags()` which will be passed directly to [sanitize-html](https://www.npmjs.com/package/sanitize-html) so see thier documentation for details but here is an example.
 
-```
-const htmlInput = require('joi-html-input');
-const Joi = require('joi').extend(htmlInput);
+```js
+const htmlInput = require('joi-html-input')
+const Joi = require('joi').extend(htmlInput)
 
 const sanitizeConfig = {
   'allowedTags': [
@@ -53,18 +51,17 @@ const sanitizeConfig = {
       'style'
     ]
   }
-};
+}
 
-const htmlString = '<h1><span class="align-left" style="color: red;">Test Link</span></h1>';
+const htmlString = '<h1><span class="align-left" style="color:red;">Test Link</span></h1>'
 
-const joiSchema = Joi.htmlInput().allowedTags(sanitizeConfig);
-const results = Joi.validate(htmlString, joiSchema);
+const joiSchema = Joi.htmlInput().allowedTags(sanitizeConfig)
+const results = joiSchema.validate(htmlString)
 
-console.log(results);
+console.log(results)
 
 /* Expected output:
-{ error: null,
-  value: '<h1><span style="color: red;">Test Link</span></h1>' }
+{ value: '<h1><span style="color:red">Test Link</span></h1>' }
 */
 ```
 
@@ -81,19 +78,18 @@ The tag stripping and the decoding of HTML entities for these methods is provide
 
 Validates the length of a string ignoring HTML tags and converting HTML entities to characters. The return value remains unchanged.
 
-```
-const htmlInput = require('joi-html-input');
-const Joi = require('joi').extend(htmlInput);
+```js
+const htmlInput = require('joi-html-input')
+const Joi = require('joi').extend(htmlInput)
 
-const htmlString = '<div><h1 class="align-center">Test Heading</h1></div>';
-const joiSchema = Joi.htmlInput().displayLength(12);
-const results = Joi.validate(htmlString, joiSchema);
+const htmlString = '<div><h1 class="align-center">Test&nbsp;Heading</h1></div>'
+const joiSchema = Joi.htmlInput().displayLength(12)
+const results = joiSchema.validate(htmlString)
 
-console.log(results);
+console.log(results)
 
 /* Expected output:
-{ error: null,
-  value: '<div><h1 class="align-center">Test Heading</h1></div>' }
+{ value: '<div><h1 class="align-center">Test&nbsp;Heading</h1></div>' }
 */
 ```
 
@@ -101,22 +97,18 @@ console.log(results);
 
 Validates the minimum number of characters in a string ignoring HTML tags and converting HTML entities to characters. The return value remains unchanged.
 
-```
-const htmlInput = require('joi-html-input');
-const Joi = require('joi').extend(htmlInput);
+```js
+const htmlInput = require('joi-html-input')
+const Joi = require('joi').extend(htmlInput)
 
-const htmlString = '<div><h1 class="align-center"></h1></div>';
-const joiSchema = Joi.htmlInput().displayMin(12);
-const results = Joi.validate(htmlString, joiSchema);
+const htmlString = '<div><h1 class="align-center">Test&nbsp;Heading</h1></div>'
+const joiSchema = Joi.htmlInput().displayMin(12)
+const results = joiSchema.validate(htmlString)
 
-console.log(results);
+console.log(results)
 
 /* Expected output:
-{ error:
-  { ValidationError: "value" is not allowed to be empty
-    ...
-  },
-  value: '<div><h1 class="align-center"></h1></div>' }
+{ value: '<div><h1 class="align-center">Test&nbsp;Heading</h1></div>' }
 */
 ```
 
@@ -124,19 +116,18 @@ console.log(results);
 
 Validates the maximum number of characters in a string ignoring HTML tags and converting HTML entities to characters. The return value remains unchanged.
 
-```
-const htmlInput = require('joi-html-input');
-const Joi = require('joi').extend(htmlInput);
+```js
+const htmlInput = require('joi-html-input')
+const Joi = require('joi').extend(htmlInput)
 
-const htmlString = '<div><h1 class="align-center">Test Heading</h1></div>';
-const joiSchema = Joi.htmlInput().displayMax(12);
-const results = Joi.validate(htmlString, joiSchema);
+const htmlString = '<div><h1 class="align-center">Test&nbsp;Heading</h1></div>'
+const joiSchema = Joi.htmlInput().displayMax(12)
+const results = joiSchema.validate(htmlString)
 
-console.log(results);
+console.log(results)
 
 /* Expected output:
-{ error: null,
-  value: '<div><h1 class="align-center">Test Heading</h1></div>' }
+{ value: '<div><h1 class="align-center">Test&nbsp;Heading</h1></div>' }
 */
 ```
 
@@ -150,58 +141,39 @@ Here are some more examples that you might find useful. If you have any suggesti
 
 Just like the builtin `Joi.string().length()` the `.displayLength()` `.displayMin()` and `.displayMax()` also have support for an optional encoding parameter, here is an example.
 
-```
-const htmlInput = require('joi-html-input');
-const Joi = require('joi').extend(htmlInput);
+```js
+const htmlInput = require('joi-html-input')
+const Joi = require('joi').extend(htmlInput)
 
-const htmlString = '<div><span class="small-text">Copywrite \u00A9</span></div>';
+const htmlString = '<div><span class="small-text">Copywrite \u00A9</span></div>'
 
 // With out utf8 character encoding the length of this string will be 16
-const joiSchema1 = Joi.htmlInput().displayLength(12);
-const results1 = Joi.validate(htmlString, joiSchema1);
+const joiSchema1 = Joi.htmlInput().displayLength(12)
+const results1 = joiSchema1.validate(htmlString)
 
 // So this will produce an error
-console.log(results1);
+console.log(results1)
 
 /* Expected output:
-{ error:
-  { ValidationError: "value" length must be 12 characters long
-    ...
-  },
-  value: '<div><span class="small-text">Copywrite ©</span></div>' }
+{
+  value: '<div><span class="small-text">Copywrite ©</span></div>',
+  error: [Error [ValidationError]: "value" length must be 12 characters long] {
+    _original: '<div><span class="small-text">Copywrite ©</span></div>',
+    details: [ [Object] ]
+  }
+}
 */
 
 // With utf8 character encoding the length of this string will be 12
 // Note: \u00A9 = 2 characters
-const joiSchema2 = Joi.htmlInput().displayLength(12, 'utf8');
-const results2 = Joi.validate(htmlString, joiSchema2);
+const joiSchema2 = Joi.htmlInput().displayLength(12, 'utf8')
+const results2 = joiSchema2.validate(htmlString)
 
 // So this will validate
-console.log(results2);
+console.log(results2)
 
 /* Expected output:
-{ error: null,
-  value: '<div><span class="small-text">Copywrite ©</span></div>' }
-*/
-```
-
-### HTML Entities
-
-HTML entites will be decoded before the string lengths are checked so entites like `&nbsp;` will only count as 1 character.
-
-```
-const htmlInput = require('joi-html-input');
-const Joi = require('joi').extend(htmlInput);
-
-const htmlString = '<div><h1>Test&nbsp;Heading</h1></div>';
-const joiSchema = Joi.htmlInput().displayLength(12);
-const results = Joi.validate(htmlString, joiSchema);
-
-console.log(results);
-
-/* Expected output:
-{ error: null,
-  value: '<div><h1>Test&nbsp;Heading</h1></div>' }
+{ value: '<div><span class="small-text">Copywrite ©</span></div>' }
 */
 ```
 
@@ -209,7 +181,7 @@ console.log(results);
 
 All the additonal methods provided by `.htmlInput()` can be chained with other methods including those provided by Joi. Here is an example of multiple methods being used together.
 
-```
+```js
 const sanitizeConfig = {
   'allowedTags': [
     'h1'
@@ -219,19 +191,23 @@ const sanitizeConfig = {
       'id'
     ]
   }
-};
+}
 
-const htmlString = '<h1 id="headline">Test Heading<script>alert(\'Test\')</script></h1>';
-const joiSchema = Joi.htmlInput().allowedTags(sanitizeConfig).displayLength(12).max(50);
-const results = Joi.validate(htmlString, joiSchema);
+const htmlString = '<h1 id="headline">Test Heading<script>alert(\'Test\')</script></h1>'
+const joiSchema = Joi.htmlInput().allowedTags(sanitizeConfig).displayLength(12).max(50)
+const results = joiSchema.validate(htmlString)
 
-console.log(results);
+console.log(results)
 
 /* Expected output:
-{ error: null,
-  value: '<h1 id="headline">Test Heading</h1>' }
+{ value: '<h1 id="headline">Test Heading</h1>' }
 */
 ```
+
+
+## Compatibility
+
+Updated and tested for use with Joi 17.6.0 and node 16.14.0
 
 
 ## Disclaimer
