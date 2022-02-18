@@ -8,7 +8,7 @@
     "url": "git+https://github.com/dekatron/joi-html-input.git"
   },
   "scripts": {
-    "test": "eslint . && jest test/index.spec.js",
+    "test": "eslint . && jest",
     "lint": "eslint ."
   },
   "keywords": [
