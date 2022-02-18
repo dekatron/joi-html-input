@@ -57,7 +57,7 @@ describe('Joi.htmlInput', () => {
       const htmlString = '<p>This is a <span>string</span><script>alert(\'test\')</script></p>'
       const joiSchema = Joi.htmlInput().allowedTags()
       const joiValidation = joiSchema.validate(htmlString)
-      const cleanHtmlString = '<p>This is a string</p>'
+      const cleanHtmlString = '<p>This is a <span>string</span></p>'
 
       expect(joiValidation.error).toBe(undefined)
       expect(joiValidation.value).toBe(cleanHtmlString)
