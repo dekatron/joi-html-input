@@ -1,6 +1,6 @@
 {
   "name": "joi-html-input",
-  "version": "1.1.5",
+  "version": "2.0.0",
   "description": "Joi validations for inputs that accept html",
   "main": "lib/index.js",
   "repository": {
@@ -8,7 +8,8 @@
     "url": "git+https://github.com/dekatron/joi-html-input.git"
   },
   "scripts": {
-    "test": "mocha test/index.tests.js"
+    "test": "eslint . && jest",
+    "lint": "eslint ."
   },
   "keywords": [
     "joi",
@@ -21,15 +22,19 @@
   },
   "homepage": "https://github.com/dekatron/joi-html-input#readme",
   "peerDependencies": {
-    "joi": ">=10.x.x"
+    "joi": ">=17.6.x"
   },
   "dependencies": {
-    "sanitize-html": "^1.14.1",
+    "sanitize-html": "^2.7.0",
     "string": "^3.3.3"
   },
   "devDependencies": {
-    "chai": "^3.5.0",
-    "joi": ">=10.x.x",
-    "mocha": "^3.2.0"
+    "eslint": "^8.9.0",
+    "eslint-config-standard": "^16.0.3",
+    "eslint-plugin-import": "^2.25.4",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^6.0.0",
+    "jest": "^27.5.1",
+    "joi": ">=17.6.x"
   }
 }
