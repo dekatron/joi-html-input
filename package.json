@@ -25,7 +25,7 @@
     "joi": ">=17.6.x"
   },
   "dependencies": {
-    "sanitize-html": "^1.14.1",
+    "sanitize-html": "^2.7.0",
     "string": "^3.3.3"
   },
   "devDependencies": {
