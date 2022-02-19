@@ -13,3 +13,18 @@ jobs:
           node-version: '16.14.0'
       - run: yarn install
       - run: yarn test
+
+name: CI Publish To NPM
+on:
+  push:
+    branches:
+      - master
+jobs:
+  steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-node@v2
+      with:
+        node-version: '16.14.0'
+    - run: yarn publish
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
