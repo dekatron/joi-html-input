@@ -1,7 +1,8 @@
-name: CI Run Tests
+name: Run Tests
 on:
   pull_request:
-    branches: [ master ]
+    branches: 
+      - master
   workflow_dispatch:
 jobs:
   test:
