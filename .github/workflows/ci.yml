@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+  # Lets the publish workflow run this exact pipeline before releasing, rather
+  # than keeping a second copy of the checks in step with this one. Pushes to
+  # main are covered that way, so there is no push trigger here — it would only
+  # run everything a second time.
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  # Supersede in-flight runs for the same branch, but never cancel a run on
+  # main, since the publish workflow gates on it.
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  lint:
+    name: Lint and typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run lint
+
+      - run: npm run typecheck
+
+  test:
+    name: Test (node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      # Report every failing combination, not just the first.
+      fail-fast: false
+      matrix:
+        # Every currently supported Node release line. Each of these also runs
+        # the suite against both supported Joi majors, so the real coverage is
+        # this matrix times two.
+        node: ['22', '24', '26']
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm test
+
+  build:
+    name: Build and package checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      # Also runs publint and are-the-types-wrong, so a broken exports map or
+      # unresolvable type declaration fails here rather than after a release.
+      - run: npm run build
+
+      - name: Check the packed tarball contents
+        run: npm pack --dry-run
