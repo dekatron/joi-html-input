@@ -4,6 +4,14 @@ Contributions are welcome. If you spot a bug, please raise an issue on GitHub or
 
 **Please don't open a public issue for a security vulnerability.** Report it privately through [GitHub's private vulnerability reporting](https://github.com/dekatron/joi-html-input/security/advisories/new) instead, so there is a chance to get a fix released before the details are public.
 
+## AI generated contributions
+
+Contributions written with AI assistance are welcome — use whatever tools work for you. The bar is exactly the same as for anything else: the code should be well written, match the existing style, and be covered by tests.
+
+What I do ask is that a human has read and understood the change before the pull request goes up. Review it the way you would review someone else's work — check that it does what the commit message says, that the tests fail when the behaviour is broken rather than merely passing alongside it, and that you could explain any line of it if asked. If you wouldn't be comfortable defending it in review, it isn't ready.
+
+That matters more than usual here. This is a sanitization library, so a plausible looking change that quietly widens what gets through is worse than no change at all.
+
 ## Getting started
 
 The repo uses npm, and the toolchain targets the latest Node LTS — `.nvmrc` has the version, so `nvm use` will put you on it.
