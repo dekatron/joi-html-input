@@ -6,7 +6,9 @@ Contributions are welcome. If you spot a bug, please raise an issue on GitHub or
 
 ## AI generated contributions
 
-Contributions written with AI assistance are welcome — use whatever tools work for you. The bar is exactly the same as for anything else: the code should be well written, match the existing style, and be covered by tests.
+Contributions written with AI assistance are welcome — use whatever tools work for you. The bar is exactly the same as for anything else: the code should be well written, match the existing style, and be developed test first as described under [Tests](#tests).
+
+Coding assistants are particularly prone to writing the implementation and then a test that agrees with it, so this is the part most worth holding them to.
 
 What I do ask is that a human has read and understood the change before the pull request goes up. Review it the way you would review someone else's work — check that it does what the commit message says, that the tests fail when the behaviour is broken rather than merely passing alongside it, and that you could explain any line of it if asked. If you wouldn't be comfortable defending it in review, it isn't ready.
 
@@ -33,7 +35,19 @@ This project is written in TypeScript. Style is enforced by ESLint — 2 space i
 
 ## Tests
 
-Please make sure all tests pass before making your pull request on GitHub. If you are adding new functionality please ensure that you have added tests to cover your new feature.
+Please write the test first.
+
+Test driven development is the expectation here, not just a preference. The loop is the usual one:
+
+1. **Red** — write a test for the behaviour you want and watch it fail. Run `npm test` and read the failure; it should fail for the reason you expect, not because of a typo or a missing import.
+2. **Green** — write the smallest change that makes it pass.
+3. **Refactor** — tidy up with the test still passing.
+
+The reason I care about the order is that a test written after the code has already been seen to work tends to assert what the code *does* rather than what it *should do*, and it never gets the one moment that proves it can fail. That produces tests which pass whatever happens. This repo has shipped one: the v2 suite had a test named `should enforce a maximum using byte count` that called `displayLength` instead of `displayMax`. It passed for years without ever exercising the rule in its name.
+
+If you genuinely cannot write the test first — you are pinning down behaviour that already exists, say, or reproducing a bug you do not yet understand — then break the finished code afterwards and check the test fails. A test you have never seen fail is not yet evidence of anything.
+
+Please make sure all tests pass before making your pull request on GitHub.
 
 A few things worth knowing about the suite:
 
