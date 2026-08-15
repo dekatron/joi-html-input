@@ -282,6 +282,48 @@ Some dependency versions are pinned on purpose and should not be bumped without 
 Builds are checked with [publint](https://publint.dev) and [Are the Types Wrong?](https://arethetypeswrong.github.io) so that packaging problems fail the build rather than a release.
 
 
+## Security notes
+
+Please read this section before relying on this package to make untrusted input safe.
+
+### `allowedTags()` is the only rule that sanitizes
+
+`.displayLength()`, `.displayMin()` and `.displayMax()` strip tags and decode entities **only in order to measure the value**. They return the input unchanged, exactly as documented above. A schema like this validates the length but hands your back-end the raw input, `<script>` tags and all:
+
+```js
+// NOT sanitized — the value is returned untouched
+Joi.htmlInput().displayMax(280)
+```
+
+If you want a safe value out, call `.allowedTags()`:
+
+```js
+// Sanitized, then length checked
+Joi.htmlInput().allowedTags().displayMax(280).max(2000)
+```
+
+Rule order does not matter for safety — `.displayMax(280).allowedTags()` produces the same sanitized value — but including `.allowedTags()` at all does.
+
+### Options that switch sanitization off
+
+Because the options object is passed straight to sanitize-html, two values disable protection entirely:
+
+- `{ allowedTags: false }` — allows **every** tag, including `<script>`. sanitize-html warns when you list `'script'` explicitly in `allowedTags`, but it does **not** warn for `false`.
+- `{ allowedAttributes: false }` — allows every attribute, including `onerror`, `onload` and friends.
+
+Only use these if the input is already trusted.
+
+Supplying a partial options object is safe: sanitize-html keeps its own defaults for any key you leave out, so `{ allowedTags: ['a'] }` still blocks `javascript:` URLs via the default `allowedSchemes`.
+
+### Bounding stored size
+
+Markup does not count toward the display length, so a value can pass `.displayMax(10)` and still be many kilobytes of `<p></p>`. Pair the display rules with a plain `.max()` when the limit you care about is storage rather than what the user sees.
+
+### Sanitize on output too
+
+Sanitizing on input is one layer, not the whole defence. Escape or sanitize again at the point you render, according to the context you are rendering into, and set a Content Security Policy. This package cannot know where its output ends up.
+
+
 ## Disclaimer
 
 This package is not an official part of Joi nor is it produced by any member of the Joi team. It is not security tested, if you want to use this package in your project please read the full license first (link below) and review the code for yourself before using.
