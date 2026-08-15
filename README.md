@@ -257,9 +257,9 @@ Just like the builtin `Joi.string().length()`, the `.displayLength()`, `.display
 Every encoding Node's `Buffer` supports is accepted, the same set Joi's own length rules take: `ascii`, `base64`, `base64url`, `binary`, `hex`, `latin1`, `ucs-2`, `ucs2`, `utf-8`, `utf-16le`, `utf8` and `utf16le`. Anything else is rejected when the schema is built.
 
 ```js
-const htmlString = '<div><span class="small-text">Copywrite ©</span></div>'
+const htmlString = '<div><span class="small-text">Copyright ©</span></div>'
 
-// The displayed text is 'Copywrite ©', which is 11 characters but 12 utf8
+// The displayed text is 'Copyright ©', which is 11 characters but 12 utf8
 // bytes, because © is a 2 byte character.
 
 // Counting characters, this is 11 — so asking for 12 produces an error
@@ -270,9 +270,9 @@ console.log(results1)
 
 /* Expected output:
 {
-  value: '<div><span class="small-text">Copywrite ©</span></div>',
+  value: '<div><span class="small-text">Copyright ©</span></div>',
   error: [Error [ValidationError]: "value" length must be 12 characters long] {
-    _original: '<div><span class="small-text">Copywrite ©</span></div>',
+    _original: '<div><span class="small-text">Copyright ©</span></div>',
     details: [ [Object] ]
   }
 }
@@ -285,7 +285,7 @@ const results2 = joiSchema2.validate(htmlString)
 console.log(results2)
 
 /* Expected output:
-{ value: '<div><span class="small-text">Copywrite ©</span></div>' }
+{ value: '<div><span class="small-text">Copyright ©</span></div>' }
 */
 ```
 
