@@ -70,6 +70,12 @@ export interface HtmlInputRoot extends Root {
  * — but validating against the list still catches a misspelled key, which
  * would otherwise silently fall back to the defaults and drop whatever
  * restriction the caller meant to apply.
+ *
+ * Keep this in step with sanitize-html itself rather than with
+ * `@types/sanitize-html`, which lags the runtime package. `test/index.spec.ts`
+ * cross checks it against `sanitizeHtml.defaults`, which covers every option
+ * that ships with a default; the rest are callbacks and have to be added by
+ * hand when sanitize-html gains one.
  */
 const SANITIZE_HTML_OPTION_KEYS = [
   'allowIframeRelativeUrls',
@@ -77,6 +83,7 @@ const SANITIZE_HTML_OPTION_KEYS = [
   'allowVulnerableTags',
   'allowedAttributes',
   'allowedClasses',
+  'allowedEmptyAttributes',
   'allowedIframeDomains',
   'allowedIframeHostnames',
   'allowedSchemes',
@@ -96,6 +103,7 @@ const SANITIZE_HTML_OPTION_KEYS = [
   'onOpenTag',
   'parseStyleAttributes',
   'parser',
+  'preserveEscapedAttributes',
   'selfClosing',
   'textFilter',
   'transformTags',
@@ -229,6 +237,11 @@ export const htmlInput: ExtensionFactory = (joi: Root): Extension => ({
       validate (value: string, helpers: CustomHelpers, args: MaxArgs) {
         const { error } = joi
           .string()
+          // Markup with no text in it — `<p></p>`, `<p><br></p>`, what an empty
+          // WYSIWYG editor submits — has a display length of zero, which is
+          // within any maximum. Without this joi.string() rejects the empty
+          // string outright and the rule reports it as being too long.
+          .allow('')
           .max(args.maxLength, args.encoding)
           .validate(displayString(value))
 

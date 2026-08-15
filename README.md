@@ -138,6 +138,8 @@ The display methods measure what the reader actually sees. Tags are stripped and
 
 The value itself is never modified by these methods. Formatting is preserved; only the measurement ignores it.
 
+Markup with no text in it — `<p></p>` or `<p><br></p>`, which is what most editors submit for an empty field — has a display length of zero. `.displayMax()` accepts it, and `.displayMin()` rejects it. Use Joi's own `.required()` and `.allow('')` to say whether the field may be empty at all.
+
 Tag stripping is provided by [sanitize-html](https://www.npmjs.com/package/sanitize-html) and entity decoding by [html-entities](https://www.npmjs.com/package/html-entities).
 
 ### .displayLength(limit, [encoding])

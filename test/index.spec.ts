@@ -1,6 +1,7 @@
+import sanitizeHtml from 'sanitize-html'
 import { describe, expect, it } from 'vitest'
 
-import htmlInputDefault, { htmlInput, type DisplayEncoding } from '../src/index.js'
+import htmlInputDefault, { htmlInput, type AllowedTagsOptions, type DisplayEncoding } from '../src/index.js'
 import { joiVersions } from './joi-versions.js'
 
 describe('package exports', () => {
@@ -97,6 +98,19 @@ describe.each(joiVersions)('Joi.htmlInput on $name', ({ Joi }) => {
       expect(() => Joi.htmlInput().allowedTags({ allowedTags: [1, 2] as unknown as string[] })).toThrow()
     })
 
+    it('accepts every option sanitize-html ships a default for', () => {
+      // Drift alarm. The allowlist was originally derived from
+      // @types/sanitize-html, which lagged the runtime package and so rejected
+      // two real options. Checking against sanitize-html itself means a version
+      // bump that adds an option fails here rather than in a caller's code.
+      // IDefaults is an interface, so it has no implicit index signature.
+      const defaults = Object.entries(sanitizeHtml.defaults) as [string, unknown][]
+      for (const [key, value] of defaults) {
+        const options = { [key]: value } as AllowedTagsOptions
+        expect(() => Joi.htmlInput().allowedTags(options), `option ${key}`).not.toThrow()
+      }
+    })
+
     it('should strip tags based on defaults if no parameters are provided', () => {
       const htmlString = '<p>This is a <span>string</span><script>alert(\'test\')</script></p>'
       const joiSchema = Joi.htmlInput().allowedTags()
@@ -156,6 +170,44 @@ describe.each(joiVersions)('Joi.htmlInput on $name', ({ Joi }) => {
 
       expect(joiValidation.error).toBe(undefined)
       expect(joiValidation.value).toBe(htmlString)
+    })
+  })
+
+  describe('markup with no text in it', () => {
+    // What a WYSIWYG editor submits for an empty field. The display length is
+    // zero, so a maximum should accept it while a minimum or an exact length
+    // should not.
+    const empty = ['<p></p>', '<p><br></p>', '<div><p></p></div>']
+
+    it.each(empty)('%s satisfies displayMax, since zero is within any maximum', (value) => {
+      const result = Joi.htmlInput().displayMax(280).validate(value)
+
+      expect(result.error).toBe(undefined)
+      expect(result.value).toBe(value)
+    })
+
+    it.each(empty)('%s fails displayMin with the minimum message, not an empty string one', (value) => {
+      const result = Joi.htmlInput().displayMin(1).validate(value)
+
+      expect(result.error?.message).toBe('"value" length must be at least 1 characters long')
+    })
+
+    it.each(empty)('%s fails displayLength with the length message', (value) => {
+      const result = Joi.htmlInput().displayLength(5).validate(value)
+
+      expect(result.error?.message).toBe('"value" length must be 5 characters long')
+    })
+
+    it('still leaves an actually empty string to the base string rules', () => {
+      // Not our concern: joi.string() rejects '' unless the caller allows it.
+      expect(Joi.htmlInput().displayMax(280).validate('').error?.message)
+        .toBe('"value" is not allowed to be empty')
+      expect(Joi.htmlInput().displayMax(280).allow('').validate('').error).toBe(undefined)
+    })
+
+    it('counts whitespace-only markup as the whitespace it renders', () => {
+      // &nbsp; is a real character, so this is length 1 rather than empty.
+      expect(Joi.htmlInput().displayLength(1).validate('<p>&nbsp;</p>').error).toBe(undefined)
     })
   })
 
