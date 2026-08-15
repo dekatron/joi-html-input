@@ -151,7 +151,6 @@ const htmlString = '<div><h1 class="align-center">Test&nbsp;Heading</h1></div>'
 // 17 Display Characters
 const regularString = 'Long Test Heading'
 
-
 const joiSchema = Joi.htmlInput().displayLength(12)
 const pass = joiSchema.validate(htmlString)
 const fail = joiSchema.validate(regularString)
@@ -186,7 +185,6 @@ const htmlString = '<div><h1 class="align-center">Test&nbsp;Heading</h1></div>'
 // 11 Display Characters
 const regularString = 'Short Title'
 
-
 const joiSchema = Joi.htmlInput().displayMin(12)
 const pass = joiSchema.validate(htmlString)
 const fail = joiSchema.validate(regularString)
@@ -220,7 +218,6 @@ const htmlString = '<div><h1 class="align-center">Test&nbsp;Heading</h1></div>'
 
 // 17 Display Characters
 const regularString = 'Long Test Heading'
-
 
 const joiSchema = Joi.htmlInput().displayMax(12)
 const pass = joiSchema.validate(htmlString)
