@@ -188,7 +188,7 @@ export const htmlInput: ExtensionFactory = (joi: Root): Extension => ({
       method (expectedLength: number, encoding?: DisplayEncoding) {
         return this.$_addRule({ name: 'displayLength', args: { expectedLength, encoding } })
       },
-args: [
+      args: [
         { name: 'expectedLength', assert: joi.number().integer().min(0).required() },
         { name: 'encoding', assert: encodingArg(joi) },
       ],
@@ -230,7 +230,7 @@ args: [
       method (maxLength: number, encoding?: DisplayEncoding) {
         return this.$_addRule({ name: 'displayMax', args: { maxLength, encoding } })
       },
-args: [
+      args: [
         { name: 'maxLength', assert: joi.number().integer().min(0).required() },
         { name: 'encoding', assert: encodingArg(joi) },
       ],
