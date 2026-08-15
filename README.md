@@ -41,7 +41,7 @@ $ pnpm add joi-html-input joi
 
 ## Usage
 
-The package exports the extension as a named export (`htmlInput`) and as a default export — they are the same value, so use whichever suits your codebase.
+The package exports the extension twice, as a named export (`htmlInput`) and as the default export. They are the same value, so use whichever suits your codebase — but do take one of them. The module object itself is not the extension, so `require('joi-html-input')` on its own will not work.
 
 **ESM**
 
@@ -377,7 +377,7 @@ Version 3 is a breaking release. The validation rules themselves are unchanged �
 
 - **Node 22.12 or newer is required.** Node 16 is no longer supported.
 - **Joi 17.13.4 or 18.x is required**, and Joi is now a peer dependency you install yourself.
-- **The import changed.** The extension is now a named export rather than the whole module:
+- **The import changed.** In v2 the module *was* the extension. In v3 it exports the extension, so take it off the module rather than using the module itself:
 
   ```js
   // v2
@@ -387,7 +387,7 @@ Version 3 is a breaking release. The validation rules themselves are unchanged �
   const { htmlInput } = require('joi-html-input')
   ```
 
-  The rest of the usage — `Joi.extend(htmlInput)` and every rule — is the same.
+  `require('joi-html-input').default` works too, as does a default `import` in ESM. The rest of the usage — `Joi.extend(htmlInput)` and every rule — is unchanged.
 
 
 ## Contributing
