@@ -287,7 +287,7 @@ console.log(results2)
 
 ### Sanitization And Validation Together
 
-All the additional methods provided by `.htmlInput()` can be chained with other methods including those provided by Joi. Rules run in the order they are declared, so `.allowedTags()` sanitizes the value before the length rules measure it. Here is an example of multiple methods being used together.
+All the additional methods provided by `.htmlInput()` can be chained with other methods including those provided by Joi. Rules run in the order they are declared, so declaring `.allowedTags()` first means it sanitizes the value before the length rules measure it — which is the order you want, for the reasons in [Security notes](#declare-allowedtags-first). Here is an example of multiple methods being used together.
 
 ```js
 const sanitizeConfig = {
@@ -330,7 +330,26 @@ Joi.htmlInput().displayMax(280)
 Joi.htmlInput().allowedTags().displayMax(280).max(2000)
 ```
 
-Order does not affect the result — `.displayMax(280).allowedTags()` produces the same sanitized value — but `.allowedTags()` does need to be in the chain.
+### Declare `.allowedTags()` first
+
+Rules run in the order you declare them, and that order matters in two ways.
+
+The display rules measure the value as it is when they run, so sanitizing after them measures something different from sanitizing before them. With the default options the two usually agree, but options that add or remove text — `disallowedTagsMode: 'escape'` or `'completelyDiscard'`, for instance — make the same input pass in one order and fail in the other.
+
+More importantly, Joi stops at the first failing rule unless you pass `abortEarly: false`. If a length rule is declared ahead of `.allowedTags()` and that length rule fails, the sanitizer never runs, and the value returned alongside the error is the raw input:
+
+```js
+const dirty = '<p>' + 'a'.repeat(50) + '</p><script>alert(1)</script>'
+
+// Sanitized, then rejected for length. value is safe.
+Joi.htmlInput().allowedTags().displayMax(5).validate(dirty)
+
+// Rejected for length before allowedTags() ever runs.
+// value still contains the live <script> tag.
+Joi.htmlInput().displayMax(5).allowedTags().validate(dirty)
+```
+
+You should not be using the value from a failed validation anyway, but it does get logged and echoed back in practice. Putting `.allowedTags()` first means the value is sanitized whatever happens after it.
 
 ### Options that switch sanitization off
 

@@ -177,15 +177,50 @@ describe.each(joiVersions)('security: $name', ({ Joi }) => {
     })
   })
 
-  describe('rule order does not change the safety of the returned value', () => {
+  describe('rule order', () => {
     const payload = '<p>hi</p><script>alert(1)</script>'
 
-    it('sanitises when allowedTags is declared first', () => {
+    it('sanitises either way when every rule passes', () => {
       expect(Joi.htmlInput().allowedTags().displayMax(50).validate(payload).value).toBe('<p>hi</p>')
+      expect(Joi.htmlInput().displayMax(50).allowedTags().validate(payload).value).toBe('<p>hi</p>')
     })
 
-    it('sanitises when allowedTags is declared last', () => {
-      expect(Joi.htmlInput().displayMax(50).allowedTags().validate(payload).value).toBe('<p>hi</p>')
+    // Joi stops at the first failing rule unless abortEarly is false, so a
+    // length rule declared ahead of allowedTags() can prevent the sanitizer
+    // from ever running. This is why the README says to declare allowedTags()
+    // first, and it is the case most likely to be broken by a refactor.
+    const dirty = `<p>${'a'.repeat(50)}</p><script>alert(1)</script>`
+
+    it('still sanitises on failure when allowedTags is declared first', () => {
+      const result = Joi.htmlInput().allowedTags().displayMax(5).validate(dirty)
+
+      expect(result.error).not.toBe(undefined)
+      expect(result.value).not.toMatch(executableMarkup)
+    })
+
+    it('returns the raw value on failure when allowedTags is declared last', () => {
+      const result = Joi.htmlInput().displayMax(5).allowedTags().validate(dirty)
+
+      expect(result.error).not.toBe(undefined)
+      expect(result.value).toBe(dirty)
+      expect(result.value).toMatch(executableMarkup)
+    })
+
+    it('runs every rule regardless of order when abortEarly is false', () => {
+      const result = Joi.htmlInput().displayMax(5).allowedTags().validate(dirty, { abortEarly: false })
+
+      expect(result.error).not.toBe(undefined)
+      expect(result.value).not.toMatch(executableMarkup)
+    })
+
+    it('can flip a pass into a failure when sanitizing changes the text', () => {
+      // completelyDiscard drops the text of disallowed tags, so the value
+      // measures shorter after sanitizing than before it.
+      const options = { allowedTags: ['p'], disallowedTagsMode: 'completelyDiscard' as const }
+      const value = '<p>hi</p><div>lots and lots of extra text here</div>'
+
+      expect(Joi.htmlInput().allowedTags(options).displayMax(5).validate(value).error).toBe(undefined)
+      expect(Joi.htmlInput().displayMax(5).allowedTags(options).validate(value).error).not.toBe(undefined)
     })
   })
 
