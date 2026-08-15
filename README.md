@@ -145,14 +145,33 @@ Tag stripping is provided by [sanitize-html](https://www.npmjs.com/package/sanit
 Requires the display length to be exactly `limit`.
 
 ```js
+// 12 Display Characters
 const htmlString = '<div><h1 class="align-center">Test&nbsp;Heading</h1></div>'
-const joiSchema = Joi.htmlInput().displayLength(12)
-const results = joiSchema.validate(htmlString)
 
-console.log(results)
+// 17 Display Characters
+const regularString = 'Long Test Heading'
+
+
+const joiSchema = Joi.htmlInput().displayLength(12)
+const pass = joiSchema.validate(htmlString)
+const fail = joiSchema.validate(regularString)
+
+console.log(pass)
 
 /* Expected output:
 { value: '<div><h1 class="align-center">Test&nbsp;Heading</h1></div>' }
+*/
+
+console.log(fail)
+
+/* Expected output:
+{
+  value: 'Long Test Heading',
+  error: [Error [ValidationError]: "value" length must be 12 characters long] {
+    _original: 'Long Test Heading',
+    details: [ [Object] ]
+  }
+}
 */
 ```
 
@@ -161,14 +180,33 @@ console.log(results)
 Requires the display length to be at least `limit`.
 
 ```js
+// 12 Display Characters
 const htmlString = '<div><h1 class="align-center">Test&nbsp;Heading</h1></div>'
-const joiSchema = Joi.htmlInput().displayMin(12)
-const results = joiSchema.validate(htmlString)
 
-console.log(results)
+// 11 Display Characters
+const regularString = 'Short Title'
+
+
+const joiSchema = Joi.htmlInput().displayMin(12)
+const pass = joiSchema.validate(htmlString)
+const fail = joiSchema.validate(regularString)
+
+console.log(pass)
 
 /* Expected output:
 { value: '<div><h1 class="align-center">Test&nbsp;Heading</h1></div>' }
+*/
+
+console.log(fail)
+
+/* Expected output:
+{
+  value: 'Short Title',
+  error: [Error [ValidationError]: "value" length must be at least 12 characters long] {
+    _original: 'Short Title',
+    details: [ [Object] ]
+  }
+}
 */
 ```
 
@@ -177,14 +215,33 @@ console.log(results)
 Requires the display length to be at most `limit`.
 
 ```js
+// 12 Display Characters
 const htmlString = '<div><h1 class="align-center">Test&nbsp;Heading</h1></div>'
-const joiSchema = Joi.htmlInput().displayMax(12)
-const results = joiSchema.validate(htmlString)
 
-console.log(results)
+// 17 Display Characters
+const regularString = 'Long Test Heading'
+
+
+const joiSchema = Joi.htmlInput().displayMax(12)
+const pass = joiSchema.validate(htmlString)
+const fail = joiSchema.validate(regularString)
+
+console.log(pass)
 
 /* Expected output:
 { value: '<div><h1 class="align-center">Test&nbsp;Heading</h1></div>' }
+*/
+
+console.log(fail)
+
+/* Expected output:
+{
+  value: 'Long Test Heading',
+  error: [Error [ValidationError]: "value" length must be less than or equal to 12 characters long] {
+    _original: 'Long Test Heading',
+    details: [ [Object] ]
+  }
+}
 */
 ```
 
