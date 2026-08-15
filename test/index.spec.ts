@@ -10,9 +10,17 @@ describe('package exports', () => {
 
   it('keeps DisplayEncoding in step with Node BufferEncoding', () => {
     // DisplayEncoding is spelled out rather than aliased to BufferEncoding so
-    // the published declarations stay self contained. These assignments fail to
-    // compile if the two ever diverge, which is the alarm for Node adding an
-    // encoding.
+    // the published declarations stay self contained. These two assignments
+    // check the unions are identical: the first that ours contains nothing Node
+    // does not, the second that Node contains nothing we are missing — which is
+    // the alarm for Node gaining an encoding.
+    //
+    // NOTE: this is a compile time check, not a runtime one. Vitest strips
+    // types without checking them, so `npm test` will still report this as
+    // passing even when the unions have diverged. `npm run typecheck` is what
+    // actually catches it, and that runs in `npm run verify` and in CI. The
+    // expect() below is only here so the test body is not empty; at runtime
+    // both values are null and it asserts nothing of substance.
     const _toNode: BufferEncoding = null as unknown as DisplayEncoding
     const _fromNode: DisplayEncoding = null as unknown as BufferEncoding
     expect([_toNode, _fromNode]).toHaveLength(2)
