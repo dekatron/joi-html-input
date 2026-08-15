@@ -14,10 +14,17 @@ export type AllowedTagsOptions = sanitizeHtml.IOptions
 
 /**
  * Encoding accepted by the display length rules. Matches the encoding argument
- * of Joi's own `string.length` / `string.min` / `string.max` rules, where
- * supplying `'utf8'` switches the comparison from characters to bytes.
+ * of Joi's own `string.length` / `string.min` / `string.max` rules, which
+ * accept anything `Buffer.isEncoding()` does. Supplying one switches the
+ * comparison from characters to bytes in that encoding.
+ *
+ * Spelled out rather than aliased to Node's `BufferEncoding` so the published
+ * declarations stay self contained. `test/index.spec.ts` asserts the two stay
+ * in step.
  */
-export type DisplayEncoding = 'utf8'
+export type DisplayEncoding
+  = 'ascii' | 'base64' | 'base64url' | 'binary' | 'hex' | 'latin1'
+    | 'ucs-2' | 'ucs2' | 'utf-8' | 'utf-16le' | 'utf8' | 'utf16le'
 
 /** A `Joi.string()` schema extended with the html input rules. */
 export interface HtmlInputSchema extends StringSchema {
@@ -99,6 +106,23 @@ interface LengthArgs { expectedLength: number, encoding?: DisplayEncoding }
 interface MinArgs { minLength: number, encoding?: DisplayEncoding }
 interface MaxArgs { maxLength: number, encoding?: DisplayEncoding }
 
+/**
+ * Assertion for the optional `encoding` argument of the display length rules.
+ *
+ * Joi's own length rules accept any encoding `Buffer.isEncoding()` accepts, so
+ * defer to the same check rather than hardcoding a list that would drift as
+ * Node gains encodings. Doing it here rather than letting Joi's internal assert
+ * fire means a bad encoding is caught when the schema is built, not on the
+ * first value that happens to be validated.
+ */
+const encodingArg = (joi: Root) =>
+  joi.string().custom((value: string, helpers) => {
+    if (!Buffer.isEncoding(value)) {
+      return helpers.error('any.invalid')
+    }
+    return value
+  })
+
 /** Strip every tag, then decode entities, to get the text a user actually sees. */
 const displayString = (value: string): string => {
   const withoutTags = sanitizeHtml(value, { allowedTags: [], allowedAttributes: {} })
@@ -158,7 +182,7 @@ export const htmlInput: ExtensionFactory = (joi: Root): Extension => ({
       },
       args: [
         { name: 'expectedLength', assert: joi.number().positive().required() },
-        { name: 'encoding', assert: joi.string().valid('utf8') },
+        { name: 'encoding', assert: encodingArg(joi) },
       ],
       validate (value: string, helpers: CustomHelpers, args: LengthArgs) {
         const { error } = joi
@@ -179,7 +203,7 @@ export const htmlInput: ExtensionFactory = (joi: Root): Extension => ({
       },
       args: [
         { name: 'minLength', assert: joi.number().positive().required() },
-        { name: 'encoding', assert: joi.string().valid('utf8') },
+        { name: 'encoding', assert: encodingArg(joi) },
       ],
       validate (value: string, helpers: CustomHelpers, args: MinArgs) {
         const { error } = joi
@@ -200,7 +224,7 @@ export const htmlInput: ExtensionFactory = (joi: Root): Extension => ({
       },
       args: [
         { name: 'maxLength', assert: joi.number().positive().required() },
-        { name: 'encoding', assert: joi.string().valid('utf8') },
+        { name: 'encoding', assert: encodingArg(joi) },
       ],
       validate (value: string, helpers: CustomHelpers, args: MaxArgs) {
         const { error } = joi

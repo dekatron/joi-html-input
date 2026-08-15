@@ -1,11 +1,21 @@
 import { describe, expect, it } from 'vitest'
 
-import htmlInputDefault, { htmlInput } from '../src/index.js'
+import htmlInputDefault, { htmlInput, type DisplayEncoding } from '../src/index.js'
 import { joiVersions } from './joi-versions.js'
 
 describe('package exports', () => {
   it('exposes the extension as both a named and a default export', () => {
     expect(htmlInputDefault).toBe(htmlInput)
+  })
+
+  it('keeps DisplayEncoding in step with Node BufferEncoding', () => {
+    // DisplayEncoding is spelled out rather than aliased to BufferEncoding so
+    // the published declarations stay self contained. These assignments fail to
+    // compile if the two ever diverge, which is the alarm for Node adding an
+    // encoding.
+    const _toNode: BufferEncoding = null as unknown as DisplayEncoding
+    const _fromNode: DisplayEncoding = null as unknown as BufferEncoding
+    expect([_toNode, _fromNode]).toHaveLength(2)
   })
 })
 
@@ -139,6 +149,47 @@ describe.each(joiVersions)('Joi.htmlInput on $name', ({ Joi }) => {
       expect(joiValidation.error).toBe(undefined)
       expect(joiValidation.value).toBe(htmlString)
     })
+  })
+
+  describe('encoding argument', () => {
+    // The display text of this value is 'Test ©', which is 6 characters and a
+    // different number of bytes in each encoding.
+    const htmlString = '<p>Test ©</p>'
+
+    const encodings: DisplayEncoding[] = [
+      'ascii', 'base64', 'base64url', 'binary', 'hex',
+      'latin1', 'ucs-2', 'ucs2', 'utf-8', 'utf-16le', 'utf8', 'utf16le',
+    ]
+
+    it.each(encodings)('accepts %s and measures in that encoding', (encoding) => {
+      const expected = Buffer.byteLength('Test ©', encoding)
+
+      expect(Joi.htmlInput().displayLength(expected, encoding).validate(htmlString).error).toBe(undefined)
+      expect(Joi.htmlInput().displayMin(expected, encoding).validate(htmlString).error).toBe(undefined)
+      expect(Joi.htmlInput().displayMax(expected, encoding).validate(htmlString).error).toBe(undefined)
+      // One byte under the real length must fail the exact and max forms.
+      expect(Joi.htmlInput().displayLength(expected - 1, encoding).validate(htmlString).error).not.toBe(undefined)
+      expect(Joi.htmlInput().displayMax(expected - 1, encoding).validate(htmlString).error).not.toBe(undefined)
+    })
+
+    it('measures characters rather than bytes when no encoding is given', () => {
+      expect(Joi.htmlInput().displayLength(6).validate(htmlString).error).toBe(undefined)
+      expect(Joi.htmlInput().displayLength(7).validate(htmlString).error).not.toBe(undefined)
+    })
+
+    it('distinguishes encodings that differ in width', () => {
+      // utf16le is 2 bytes per character where latin1 is 1.
+      expect(Joi.htmlInput().displayLength(12, 'utf16le').validate(htmlString).error).toBe(undefined)
+      expect(Joi.htmlInput().displayLength(6, 'latin1').validate(htmlString).error).toBe(undefined)
+    })
+
+    it.each(['utf32', 'iso-8859-1', 'windows-1252', 'nonsense'])(
+      'rejects %s when the schema is built', (encoding) => {
+        expect(() => Joi.htmlInput().displayLength(5, encoding as DisplayEncoding)).toThrow()
+        expect(() => Joi.htmlInput().displayMin(5, encoding as DisplayEncoding)).toThrow()
+        expect(() => Joi.htmlInput().displayMax(5, encoding as DisplayEncoding)).toThrow()
+      },
+    )
   })
 
   describe('Joi.htmlInput.displayMin', () => {

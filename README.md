@@ -250,7 +250,9 @@ Here are some more examples that you might find useful. If you have any suggesti
 
 ### Character Encoding
 
-Just like the builtin `Joi.string().length()`, the `.displayLength()`, `.displayMin()` and `.displayMax()` methods also have support for an optional encoding parameter. Passing `'utf8'` counts bytes instead of characters, which is what you want when the limit you are validating against is a byte limit — a `VARCHAR(n)` column, for instance.
+Just like the builtin `Joi.string().length()`, the `.displayLength()`, `.displayMin()` and `.displayMax()` methods also have support for an optional encoding parameter. Passing one counts bytes in that encoding instead of characters, which is what you want when the limit you are validating against is a byte limit — a `VARCHAR(n)` column, for instance.
+
+Every encoding Node's `Buffer` supports is accepted, the same set Joi's own length rules take: `ascii`, `base64`, `base64url`, `binary`, `hex`, `latin1`, `ucs-2`, `ucs2`, `utf-8`, `utf-16le`, `utf8` and `utf16le`. Anything else is rejected when the schema is built.
 
 ```js
 const htmlString = '<div><span class="small-text">Copywrite ©</span></div>'
