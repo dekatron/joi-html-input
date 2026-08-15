@@ -58,30 +58,23 @@ jobs:
       # prepublishOnly runs the build, which is also where publint and
       # are-the-types-wrong run, so a bad package cannot be published.
       #
-      # Authentication should be trusted publishing (OIDC), not a token.
-      # Register this repository and this workflow filename as a trusted
-      # publisher for the package on npmjs.com; npm then exchanges the Actions
-      # OIDC token for a short lived credential by itself, using the
-      # id-token: write permission already granted above for provenance. There
-      # is nothing to add here — npm attempts OIDC automatically on GitHub
-      # Actions and falls back silently when the registry has no trusted
-      # publisher configured, so it is safe to leave the token in place until
-      # OIDC is confirmed working, then delete the secret and the env below.
+      # Authentication is trusted publishing (OIDC). npm attempts it
+      # automatically on GitHub Actions, exchanging the Actions OIDC token for a
+      # short lived credential using the id-token: write permission granted
+      # above, so there is no token to configure and no secret to store. It
+      # requires this repository and this workflow filename to be registered as
+      # a trusted publisher for the package on npmjs.com.
       #
-      # NPM_TOKEN is the fallback and is on the way out. npm is removing direct
-      # publishing from 2FA-bypass tokens around January 2027, after which they
-      # can only stage a publish for a human to approve.
+      # There is deliberately no NPM_TOKEN fallback. npm logs the whole OIDC
+      # exchange at verbose and silly level, so at the default log level a
+      # fallback would be invisible: a misconfigured trusted publisher would
+      # quietly publish by token instead, look like success, and then break when
+      # npm stops letting 2FA-bypass tokens publish directly around January
+      # 2027. Without a fallback a misconfiguration fails loudly here instead.
       #
-      # For as long as it is used it has to be a granular access token — legacy
-      # tokens were removed in November 2025 — with read/write on this package
-      # and "Bypass 2FA" turned on. That setting defaults to off when a token is
-      # created, and off is what produces EOTP: the token authenticates, the
-      # registry asks for a one-time password anyway, and a runner has no TTY to
-      # answer with.
+      # Run this step with --loglevel verbose if you need to see the exchange.
       - if: steps.check.outputs.publish == 'true'
         run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Tag the release
         if: steps.check.outputs.publish == 'true'
