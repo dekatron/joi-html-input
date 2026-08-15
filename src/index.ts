@@ -138,6 +138,22 @@ const displayString = (value: string): string => {
 }
 
 /**
+ * Length of the display text, in characters or in bytes of the given encoding.
+ * The same measurement Joi's own length rules make.
+ *
+ * Measuring here rather than round tripping through `joi.string().length()`
+ * keeps a limit of zero meaningful: `joi.string()` rejects the empty string
+ * before any limit is considered, so markup with no text in it — `<p></p>`,
+ * what an empty editor submits — could never satisfy a rule however the limit
+ * was set.
+ */
+const measure = (text: string, encoding?: DisplayEncoding): number =>
+  encoding ? Buffer.byteLength(text, encoding) : text.length
+
+/** Limit argument shared by all three display rules. */
+const limitArg = (joi: Root) => joi.number().integer().min(0).required()
+
+/**
  * Joi extension adding an `htmlInput` type for values that are allowed to
  * contain html.
  *
@@ -189,16 +205,11 @@ export const htmlInput: ExtensionFactory = (joi: Root): Extension => ({
         return this.$_addRule({ name: 'displayLength', args: { expectedLength, encoding } })
       },
       args: [
-        { name: 'expectedLength', assert: joi.number().integer().min(0).required() },
+        { name: 'expectedLength', assert: limitArg(joi) },
         { name: 'encoding', assert: encodingArg(joi) },
       ],
       validate (value: string, helpers: CustomHelpers, args: LengthArgs) {
-        const { error } = joi
-          .string()
-          .length(args.expectedLength, args.encoding)
-          .validate(displayString(value))
-
-        if (error) {
+        if (measure(displayString(value), args.encoding) !== args.expectedLength) {
           return helpers.error('htmlInput.displayLength', { expectedLength: args.expectedLength })
         }
         return value
@@ -210,16 +221,11 @@ export const htmlInput: ExtensionFactory = (joi: Root): Extension => ({
         return this.$_addRule({ name: 'displayMin', args: { minLength, encoding } })
       },
       args: [
-        { name: 'minLength', assert: joi.number().positive().required() },
+        { name: 'minLength', assert: limitArg(joi) },
         { name: 'encoding', assert: encodingArg(joi) },
       ],
       validate (value: string, helpers: CustomHelpers, args: MinArgs) {
-        const { error } = joi
-          .string()
-          .min(args.minLength, args.encoding)
-          .validate(displayString(value))
-
-        if (error) {
+        if (measure(displayString(value), args.encoding) < args.minLength) {
           return helpers.error('htmlInput.displayMin', { minLength: args.minLength })
         }
         return value
@@ -231,21 +237,11 @@ export const htmlInput: ExtensionFactory = (joi: Root): Extension => ({
         return this.$_addRule({ name: 'displayMax', args: { maxLength, encoding } })
       },
       args: [
-        { name: 'maxLength', assert: joi.number().integer().min(0).required() },
+        { name: 'maxLength', assert: limitArg(joi) },
         { name: 'encoding', assert: encodingArg(joi) },
       ],
       validate (value: string, helpers: CustomHelpers, args: MaxArgs) {
-        const { error } = joi
-          .string()
-          // Markup with no text in it — `<p></p>`, `<p><br></p>`, what an empty
-          // WYSIWYG editor submits — has a display length of zero, which is
-          // within any maximum. Without this joi.string() rejects the empty
-          // string outright and the rule reports it as being too long.
-          .allow('')
-          .max(args.maxLength, args.encoding)
-          .validate(displayString(value))
-
-        if (error) {
+        if (measure(displayString(value), args.encoding) > args.maxLength) {
           return helpers.error('htmlInput.displayMax', { maxLength: args.maxLength })
         }
         return value

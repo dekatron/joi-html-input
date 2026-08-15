@@ -211,6 +211,54 @@ describe.each(joiVersions)('Joi.htmlInput on $name', ({ Joi }) => {
     })
   })
 
+  describe('limit argument', () => {
+    const emptyMarkup = '<p></p>'
+    const twoChars = '<p>hi</p>'
+
+    it.each(['displayLength', 'displayMin', 'displayMax'] as const)(
+      '%s rejects a non-integer limit, as joi does', (rule) => {
+        expect(() => Joi.htmlInput()[rule](1.5)).toThrow()
+      },
+    )
+
+    it.each(['displayLength', 'displayMin', 'displayMax'] as const)(
+      '%s rejects a negative limit', (rule) => {
+        expect(() => Joi.htmlInput()[rule](-1)).toThrow()
+      },
+    )
+
+    it.each(['displayLength', 'displayMin', 'displayMax'] as const)(
+      '%s accepts a zero limit, as joi does', (rule) => {
+        expect(() => Joi.htmlInput()[rule](0)).not.toThrow()
+      },
+    )
+
+    // A limit of zero has to actually be satisfiable, otherwise accepting it
+    // only creates a schema that can never pass.
+    it('displayLength(0) passes for markup with no text in it', () => {
+      expect(Joi.htmlInput().displayLength(0).validate(emptyMarkup).error).toBe(undefined)
+    })
+
+    it('displayLength(0) fails for markup that has text', () => {
+      expect(Joi.htmlInput().displayLength(0).validate(twoChars).error).not.toBe(undefined)
+    })
+
+    it('displayMin(0) is satisfied by anything, including empty markup', () => {
+      expect(Joi.htmlInput().displayMin(0).validate(emptyMarkup).error).toBe(undefined)
+      expect(Joi.htmlInput().displayMin(0).validate(twoChars).error).toBe(undefined)
+    })
+
+    it('displayMax(0) passes for empty markup and fails for text', () => {
+      expect(Joi.htmlInput().displayMax(0).validate(emptyMarkup).error).toBe(undefined)
+      expect(Joi.htmlInput().displayMax(0).validate(twoChars).error).not.toBe(undefined)
+    })
+
+    it('a non-zero limit is still not satisfied by empty markup', () => {
+      expect(Joi.htmlInput().displayLength(5).validate(emptyMarkup).error).not.toBe(undefined)
+      expect(Joi.htmlInput().displayMin(1).validate(emptyMarkup).error).not.toBe(undefined)
+    })
+  })
+
   describe('encoding argument', () => {
     // The display text of this value is 'Test ©', which is 6 characters and a
     // different number of bytes in each encoding.
