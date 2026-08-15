@@ -73,6 +73,33 @@ describe.each(joiVersions)('security: $name', ({ Joi }) => {
       expect(result.value).not.toMatch(/javascript:/i)
     })
 
+    it('rejects a misspelled option instead of silently ignoring it', () => {
+      // A typo must not fail open: allowedScheme (singular) would otherwise be
+      // dropped, reverting to the default schemes and losing the restriction.
+      expect(() => Joi.htmlInput().allowedTags({ allowedTags: ['a'], allowedScheme: ['https'] } as never)).toThrow()
+      expect(() => Joi.htmlInput().allowedTags({ allowedTag: ['p'] } as never)).toThrow()
+      expect(() => Joi.htmlInput().allowedTags({ nonTextTag: ['script'] } as never)).toThrow()
+    })
+
+    it('accepts every real sanitize-html option', () => {
+      expect(() => Joi.htmlInput().allowedTags({
+        allowedTags: ['a', 'p'],
+        allowedAttributes: { a: ['href'] },
+        allowedSchemes: ['https'],
+        allowedSchemesByTag: { a: ['https'] },
+        allowedClasses: { p: ['intro'] },
+        allowedStyles: {},
+        disallowedTagsMode: 'escape',
+        nonTextTags: ['script', 'style'],
+        enforceHtmlBoundary: true,
+        nestingLimit: 10,
+        parseStyleAttributes: false,
+        selfClosing: ['br'],
+        transformTags: { a: 'span' },
+        textFilter: (text: string) => text,
+      })).not.toThrow()
+    })
+
     it('honours a narrowed allowedSchemes', () => {
       const schema = Joi.htmlInput().allowedTags({ allowedTags: ['a'], allowedSchemes: ['https'] })
 

@@ -27,13 +27,28 @@ export interface HtmlInputSchema extends StringSchema {
    */
   allowedTags(options?: AllowedTagsOptions): this
 
-  /** Requires the rendered text — tags stripped, entities decoded — to be exactly `limit` long. */
+  /**
+   * Requires the rendered text — tags stripped, entities decoded — to be exactly `limit` long.
+   *
+   * Measures only. The value this returns is the original input, still
+   * unsanitized; chain `allowedTags()` if you need a safe value out.
+   */
   displayLength(limit: number, encoding?: DisplayEncoding): this
 
-  /** Requires the rendered text — tags stripped, entities decoded — to be at least `limit` long. */
+  /**
+   * Requires the rendered text — tags stripped, entities decoded — to be at least `limit` long.
+   *
+   * Measures only. The value this returns is the original input, still
+   * unsanitized; chain `allowedTags()` if you need a safe value out.
+   */
   displayMin(limit: number, encoding?: DisplayEncoding): this
 
-  /** Requires the rendered text — tags stripped, entities decoded — to be at most `limit` long. */
+  /**
+   * Requires the rendered text — tags stripped, entities decoded — to be at most `limit` long.
+   *
+   * Measures only. The value this returns is the original input, still
+   * unsanitized; chain `allowedTags()` if you need a safe value out.
+   */
   displayMax(limit: number, encoding?: DisplayEncoding): this
 }
 
@@ -41,6 +56,43 @@ export interface HtmlInputSchema extends StringSchema {
 export interface HtmlInputRoot extends Root {
   htmlInput(): HtmlInputSchema
 }
+
+/**
+ * Every option sanitize-html accepts. The `allowedTags` rule hands its options
+ * object straight to sanitize-html, so all of these have to be allowed through
+ * — but validating against the list still catches a misspelled key, which
+ * would otherwise silently fall back to the defaults and drop whatever
+ * restriction the caller meant to apply.
+ */
+const SANITIZE_HTML_OPTION_KEYS = [
+  'allowIframeRelativeUrls',
+  'allowProtocolRelative',
+  'allowVulnerableTags',
+  'allowedAttributes',
+  'allowedClasses',
+  'allowedIframeDomains',
+  'allowedIframeHostnames',
+  'allowedSchemes',
+  'allowedSchemesAppliedToAttributes',
+  'allowedSchemesByTag',
+  'allowedScriptDomains',
+  'allowedScriptHostnames',
+  'allowedStyles',
+  'allowedTags',
+  'disallowedTagsMode',
+  'enforceHtmlBoundary',
+  'exclusiveFilter',
+  'nestingLimit',
+  'nonBooleanAttributes',
+  'nonTextTags',
+  'onCloseTag',
+  'onOpenTag',
+  'parseStyleAttributes',
+  'parser',
+  'selfClosing',
+  'textFilter',
+  'transformTags',
+] as const
 
 interface AllowedTagsArgs { options?: AllowedTagsOptions }
 interface LengthArgs { expectedLength: number, encoding?: DisplayEncoding }
@@ -82,17 +134,17 @@ export const htmlInput: ExtensionFactory = (joi: Root): Extension => ({
       args: [
         {
           name: 'options',
-          // The options object is handed straight to sanitize-html, so anything
-          // it accepts has to be allowed through. The two most commonly used
-          // keys are still shape-checked to catch typos early; sanitize-html
-          // validates the rest itself.
+          // Every sanitize-html option is allowed through, but an unrecognised
+          // key is rejected rather than ignored: a misspelled option would
+          // otherwise fail open, silently reverting to the defaults and
+          // dropping the restriction the caller intended.
           assert: joi
             .object()
             .keys({
               allowedTags: joi.alternatives().try(joi.array().items(joi.string()), joi.valid(false)),
               allowedAttributes: joi.alternatives().try(joi.object(), joi.valid(false)),
             })
-            .unknown(true),
+            .pattern(joi.string().valid(...SANITIZE_HTML_OPTION_KEYS), joi.any()),
         },
       ],
       validate (value: string, _helpers: CustomHelpers, args: AllowedTagsArgs) {
