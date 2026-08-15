@@ -125,7 +125,7 @@ console.log(results)
 
 `.htmlInput()` extends the builtin `Joi.string()`, so every string method you already know — `.length()`, `.min()`, `.max()` — behaves exactly as it does on `Joi.string()`. Those measure the raw string with the markup included, which is what you want for something like a database column limit.
 
-That is usually the wrong measure for a user facing character limit. When someone types into a WYSIWYG editor like TinyMCE or CKEditor, the markup behind their bullet points, links and styling is invisible to them — making a word bold should not cost them 17 characters.
+However, that is usually the wrong measure for a user facing character limit. When someone types into a WYSIWYG editor like TinyMCE or CKEditor, the markup behind their bullet points, links and styling is invisible to them — making a word bold should not cost them 17 characters.
 
 The display methods measure what the reader actually sees. Tags are stripped and html entities are decoded before counting, so every one of these is 11 characters long:
 
