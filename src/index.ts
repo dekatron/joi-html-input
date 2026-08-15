@@ -230,8 +230,8 @@ args: [
       method (maxLength: number, encoding?: DisplayEncoding) {
         return this.$_addRule({ name: 'displayMax', args: { maxLength, encoding } })
       },
-      args: [
-        { name: 'maxLength', assert: joi.number().positive().required() },
+args: [
+        { name: 'maxLength', assert: joi.number().integer().min(0).required() },
         { name: 'encoding', assert: encodingArg(joi) },
       ],
       validate (value: string, helpers: CustomHelpers, args: MaxArgs) {
