@@ -169,35 +169,44 @@ describe.each(joiVersions)('Joi.htmlInput on $name', ({ Joi }) => {
       'latin1', 'ucs-2', 'ucs2', 'utf-8', 'utf-16le', 'utf8', 'utf16le',
     ]
 
-    it.each(encodings)('accepts %s and measures in that encoding', (encoding) => {
-      const expected = Buffer.byteLength('Test ©', encoding)
+    describe('every encoding Node supports is accepted', () => {
+      it.each(encodings)('%s measures in bytes of that encoding', (encoding) => {
+        const expected = Buffer.byteLength('Test ©', encoding)
 
-      expect(Joi.htmlInput().displayLength(expected, encoding).validate(htmlString).error).toBe(undefined)
-      expect(Joi.htmlInput().displayMin(expected, encoding).validate(htmlString).error).toBe(undefined)
-      expect(Joi.htmlInput().displayMax(expected, encoding).validate(htmlString).error).toBe(undefined)
-      // One byte under the real length must fail the exact and max forms.
-      expect(Joi.htmlInput().displayLength(expected - 1, encoding).validate(htmlString).error).not.toBe(undefined)
-      expect(Joi.htmlInput().displayMax(expected - 1, encoding).validate(htmlString).error).not.toBe(undefined)
+        expect(Joi.htmlInput().displayLength(expected, encoding).validate(htmlString).error).toBe(undefined)
+        expect(Joi.htmlInput().displayMin(expected, encoding).validate(htmlString).error).toBe(undefined)
+        expect(Joi.htmlInput().displayMax(expected, encoding).validate(htmlString).error).toBe(undefined)
+        // One byte under the real length must fail the exact and max forms.
+        expect(Joi.htmlInput().displayLength(expected - 1, encoding).validate(htmlString).error).not.toBe(undefined)
+        expect(Joi.htmlInput().displayMax(expected - 1, encoding).validate(htmlString).error).not.toBe(undefined)
+      })
+
+      it('measures characters rather than bytes when no encoding is given', () => {
+        expect(Joi.htmlInput().displayLength(6).validate(htmlString).error).toBe(undefined)
+        expect(Joi.htmlInput().displayLength(7).validate(htmlString).error).not.toBe(undefined)
+      })
+
+      it('distinguishes encodings that differ in width', () => {
+        // utf16le is 2 bytes per character where latin1 is 1.
+        expect(Joi.htmlInput().displayLength(12, 'utf16le').validate(htmlString).error).toBe(undefined)
+        expect(Joi.htmlInput().displayLength(6, 'latin1').validate(htmlString).error).toBe(undefined)
+      })
     })
 
-    it('measures characters rather than bytes when no encoding is given', () => {
-      expect(Joi.htmlInput().displayLength(6).validate(htmlString).error).toBe(undefined)
-      expect(Joi.htmlInput().displayLength(7).validate(htmlString).error).not.toBe(undefined)
-    })
+    describe('encodings Node does not support are rejected', () => {
+      // Real encodings that Buffer has no support for, plus outright nonsense.
+      // All of these must fail when the schema is built rather than being
+      // carried as far as the first value someone validates.
+      const unsupported = ['utf32', 'iso-8859-1', 'windows-1252', 'shift_jis', 'nonsense']
 
-    it('distinguishes encodings that differ in width', () => {
-      // utf16le is 2 bytes per character where latin1 is 1.
-      expect(Joi.htmlInput().displayLength(12, 'utf16le').validate(htmlString).error).toBe(undefined)
-      expect(Joi.htmlInput().displayLength(6, 'latin1').validate(htmlString).error).toBe(undefined)
-    })
+      it.each(unsupported)('%s throws when the schema is built', (encoding) => {
+        expect(Buffer.isEncoding(encoding)).toBe(false)
 
-    it.each(['utf32', 'iso-8859-1', 'windows-1252', 'nonsense'])(
-      'rejects %s when the schema is built', (encoding) => {
         expect(() => Joi.htmlInput().displayLength(5, encoding as DisplayEncoding)).toThrow()
         expect(() => Joi.htmlInput().displayMin(5, encoding as DisplayEncoding)).toThrow()
         expect(() => Joi.htmlInput().displayMax(5, encoding as DisplayEncoding)).toThrow()
-      },
-    )
+      })
+    })
   })
 
   describe('Joi.htmlInput.displayMin', () => {
