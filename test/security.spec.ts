@@ -64,6 +64,75 @@ describe.each(joiVersions)('security: $name', ({ Joi }) => {
     })
   })
 
+  describe('entity decoding cannot revive markup', () => {
+    // The display rules sanitize and THEN decode entities in order to measure
+    // the value. That decode step genuinely produces live markup:
+    //
+    //   input           &lt;script&gt;alert(&quot;fail&quot;)&lt;/script&gt;   52 chars
+    //   after sanitize  &lt;script&gt;alert("fail")&lt;/script&gt;                42 chars
+    //   after decode    <script>alert("fail")</script>                            30 chars
+    //
+    // Sanitizing cannot strip an encoded tag, because at that point it is text
+    // rather than markup — and correctly so. The value is safe purely because
+    // the decoded form is measured and discarded, never returned. These tests
+    // pin that, so reordering the two steps or returning the decoded string
+    // fails loudly instead of shipping a live script tag to the caller.
+    const encoded = '&lt;script&gt;alert(&quot;fail&quot;)&lt;/script&gt;'
+    const RAW_LENGTH = 52
+    const DECODED_LENGTH = 30
+
+    it('measures the decoded form, not the raw one', () => {
+      // Guards against this whole block passing vacuously: if the decode step
+      // stopped running, the measured length would be the raw 52 instead.
+      expect(encoded).toHaveLength(RAW_LENGTH)
+      expect(Joi.htmlInput().displayLength(DECODED_LENGTH).validate(encoded).error).toBe(undefined)
+      expect(Joi.htmlInput().displayLength(RAW_LENGTH).validate(encoded).error).not.toBe(undefined)
+    })
+
+    it.each(['displayLength', 'displayMin', 'displayMax'] as const)(
+      '%s returns the value still encoded, never the decoded live form',
+      (rule) => {
+        const schema = rule === 'displayLength'
+          ? Joi.htmlInput().displayLength(DECODED_LENGTH)
+          : rule === 'displayMin'
+            ? Joi.htmlInput().displayMin(1)
+            : Joi.htmlInput().displayMax(DECODED_LENGTH)
+
+        const result = schema.validate(encoded)
+
+        expect(result.error).toBe(undefined)
+        expect(result.value).toBe(encoded)
+        expect(result.value).not.toMatch(executableMarkup)
+      },
+    )
+
+    it('does not leak the decoded live form into a validation error', () => {
+      const result = Joi.htmlInput().displayLength(999).validate(encoded)
+      const serialised = JSON.stringify(result.error?.details) + String(result.error?.message)
+
+      expect(result.error).not.toBe(undefined)
+      expect(serialised).not.toMatch(executableMarkup)
+      expect(result.value).toBe(encoded)
+    })
+
+    it('stays inert when sanitizing and measuring are chained', () => {
+      const result = Joi.htmlInput().allowedTags().displayMax(DECODED_LENGTH).validate(encoded)
+
+      // sanitize-html decodes &quot; to a bare quote in text content, but the
+      // angle brackets stay encoded, so the result is still not live markup.
+      expect(result.error).toBe(undefined)
+      expect(result.value).toBe('&lt;script&gt;alert("fail")&lt;/script&gt;')
+      expect(result.value).not.toMatch(executableMarkup)
+    })
+
+    it('decodes one level only, so double encoding cannot become live', () => {
+      const result = Joi.htmlInput().displayMax(500).validate('&amp;lt;script&amp;gt;alert(1)&amp;lt;/script&amp;gt;')
+
+      expect(result.error).toBe(undefined)
+      expect(result.value).not.toMatch(executableMarkup)
+    })
+  })
+
   describe('option pass-through keeps sanitize-html defaults for unspecified keys', () => {
     it('still blocks javascript: urls when only allowedTags is supplied', () => {
       const result = Joi.htmlInput()
