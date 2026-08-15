@@ -1,0 +1,66 @@
+# Dependabot version updates.
+# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "saturday"
+      time: "06:00"
+      timezone: "Europe/London"
+
+    # Minor and patch only. Every major in this project is a decision rather
+    # than a routine bump: joi 19 would widen the supported range, sanitize-html
+    # and html-entities sit on the sanitisation path, and typescript and
+    # @types/node are pinned on purpose (see CONTRIBUTING.md). Nothing here
+    # touches the Node version — .nvmrc and engines are not npm dependencies.
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+
+    # Only rewrite package.json when the existing range cannot satisfy the new
+    # version. A minor bump inside an existing caret range is a lockfile change,
+    # which keeps CI honest without churning the published dependency ranges.
+    versioning-strategy: "increase-if-necessary"
+
+    # One pull request for the toolchain, one for anything the package actually
+    # ships, so a runtime dependency change is never buried in a batch of dev
+    # tooling updates.
+    groups:
+      runtime-dependencies:
+        dependency-type: "production"
+        patterns: ["*"]
+      dev-dependencies:
+        dependency-type: "development"
+        patterns: ["*"]
+
+    commit-message:
+      prefix: "chore"
+      prefix-development: "chore"
+      include: "scope"
+
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "saturday"
+      time: "06:00"
+      timezone: "Europe/London"
+
+    # Majors are allowed here, unlike npm above. These actions never reach the
+    # published package, staying current is the whole point of pinning to a
+    # major, and a breaking change shows up as a failed run on the pull request
+    # itself rather than in someone's application.
+    groups:
+      github-actions:
+        patterns: ["*"]
+
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+
+    open-pull-requests-limit: 5
