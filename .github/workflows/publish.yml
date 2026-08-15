@@ -70,11 +70,14 @@ jobs:
       #
       # NPM_TOKEN is the fallback and is on the way out. npm is removing direct
       # publishing from 2FA-bypass tokens around January 2027, after which they
-      # can only stage a publish for a human to approve. A token also has to be
-      # one that skips the 2FA prompt at all — a classic automation token or a
-      # granular access token — because a classic publish token authenticates
-      # but then gets asked for a one-time password, and a runner has no TTY to
-      # answer it, which fails with EOTP.
+      # can only stage a publish for a human to approve.
+      #
+      # For as long as it is used it has to be a granular access token — legacy
+      # tokens were removed in November 2025 — with read/write on this package
+      # and "Bypass 2FA" turned on. That setting defaults to off when a token is
+      # created, and off is what produces EOTP: the token authenticates, the
+      # registry asks for a one-time password anyway, and a runner has no TTY to
+      # answer with.
       - if: steps.check.outputs.publish == 'true'
         run: npm publish --provenance --access public
         env:
