@@ -57,6 +57,14 @@ jobs:
 
       # prepublishOnly runs the build, which is also where publint and
       # are-the-types-wrong run, so a bad package cannot be published.
+      #
+      # NPM_TOKEN has to be a token that is exempt from the two factor prompt:
+      # a classic *automation* token, or a granular access token with
+      # read/write on this package. A classic *publish* token authenticates
+      # fine but the registry still demands a one-time password, and since a
+      # runner has no TTY npm cannot prompt and fails with EOTP. Check the
+      # package's publishing access setting too — the strictest option
+      # disallows tokens altogether, which no CI token can satisfy.
       - if: steps.check.outputs.publish == 'true'
         run: npm publish --provenance --access public
         env:
