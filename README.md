@@ -282,8 +282,8 @@ Order does not affect the result — `.displayMax(280).allowedTags()` produces t
 
 The options object goes straight to sanitize-html, so two values disable filtering entirely:
 
-- `{ allowedTags: false }` — allows **every** tag, including `<script>`. sanitize-html warns when you list `'script'` explicitly, but it does **not** warn for `false`.
-- `{ allowedAttributes: false }` — allows every attribute, including `onerror` and `onload`.
+- `{ allowedTags: false }` — allows **every** tag, including `<script>`. sanitize-html prints a console warning about `script` and `style` when they end up allowed, this route included. `allowVulnerableTags: true` silences the warning without making the configuration any safer, so take it as a prompt to check you meant this.
+- `{ allowedAttributes: false }` — allows every attribute, including `onerror` and `onload`. This one is silent.
 
 Only reach for these when the input is already trusted.
 

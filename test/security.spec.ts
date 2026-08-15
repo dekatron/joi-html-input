@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { joiVersions } from './joi-versions.js'
 
@@ -209,11 +209,39 @@ describe.each(joiVersions)('security: $name', ({ Joi }) => {
       expect(Joi.htmlInput().validate(payload).value).toBe(payload)
     })
 
-    it('allowedTags: false disables tag filtering entirely', () => {
-      // sanitize-html treats `false` as "allow everything" and, unlike an
-      // explicit allowedTags: ['script'], issues no warning. Pinned here so the
-      // danger of this option is visible in the test suite.
-      expect(Joi.htmlInput().allowedTags({ allowedTags: false }).validate(payload).value).toBe(payload)
+    it('allowedTags: false disables tag filtering entirely, and says so on the console', () => {
+      // sanitize-html treats `false` as "allow everything", which means script
+      // and style end up allowed and it warns about each of them. Assert the
+      // warning rather than letting it print through the test output — it is
+      // part of the behaviour worth pinning, not noise.
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+
+      try {
+        expect(Joi.htmlInput().allowedTags({ allowedTags: false }).validate(payload).value).toBe(payload)
+
+        const warnings = warn.mock.calls.flat().join('\n')
+        expect(warnings).toMatch(/`script`, which is inherently\nvulnerable to XSS/)
+        expect(warnings).toMatch(/`style`, which is inherently\nvulnerable to XSS/)
+      }
+      finally {
+        warn.mockRestore()
+      }
+    })
+
+    it('allowVulnerableTags silences that warning without making the config safer', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+
+      try {
+        const result = Joi.htmlInput()
+          .allowedTags({ allowedTags: false, allowVulnerableTags: true })
+          .validate(payload)
+
+        expect(result.value).toBe(payload)
+        expect(warn).not.toHaveBeenCalled()
+      }
+      finally {
+        warn.mockRestore()
+      }
     })
 
     it('allowedAttributes: false lets event handlers through', () => {
