@@ -1,18 +1,19 @@
-const htmlInput = require('../lib/index.js')
-const Joi = require('joi').extend(htmlInput)
+import { describe, expect, it } from 'vitest'
 
-describe('Joi.htmlInput', () => {
+import htmlInputDefault, { htmlInput } from '../src/index.js'
+import { joiVersions } from './joi-versions.js'
+
+describe('package exports', () => {
+  it('exposes the extension as both a named and a default export', () => {
+    expect(htmlInputDefault).toBe(htmlInput)
+  })
+})
+
+describe.each(joiVersions)('Joi.htmlInput on $name', ({ Joi }) => {
   describe('Joi.htmlInput.allowedTags', () => {
     const sanitizeConfig = {
-      allowedTags: [
-        'p',
-        'span'
-      ],
-      allowedAttributes: {
-        span: [
-          'style'
-        ]
-      }
+      allowedTags: ['p', 'span'],
+      allowedAttributes: { span: ['style'] },
     }
 
     it('should not strip allowed tags', () => {
@@ -80,8 +81,8 @@ describe('Joi.htmlInput', () => {
       const joiValidation = joiSchema.validate(htmlString)
       const joiErrorMsg = '"value" length must be 23 characters long'
 
-      expect(joiValidation.error).not.toBe(null)
-      expect(joiValidation.error.details.pop().message).toBe(joiErrorMsg)
+      expect(joiValidation.error).not.toBe(undefined)
+      expect(joiValidation.error?.details.pop()?.message).toBe(joiErrorMsg)
       expect(joiValidation.value).toBe(htmlString)
     })
 
@@ -91,8 +92,8 @@ describe('Joi.htmlInput', () => {
       const joiValidation = joiSchema.validate(htmlString)
       const joiErrorMsg = '"value" length must be 21 characters long'
 
-      expect(joiValidation.error).not.toBe(null)
-      expect(joiValidation.error.details.pop().message).toBe(joiErrorMsg)
+      expect(joiValidation.error).not.toBe(undefined)
+      expect(joiValidation.error?.details.pop()?.message).toBe(joiErrorMsg)
       expect(joiValidation.value).toBe(htmlString)
     })
 
@@ -106,7 +107,7 @@ describe('Joi.htmlInput', () => {
     })
 
     it('should enforce a limit using byte count', () => {
-      const htmlString = '<p>Test \u00A9</p>'
+      const htmlString = '<p>Test ©</p>'
       const joiSchema = Joi.htmlInput().displayLength(7, 'utf8')
       const joiValidation = joiSchema.validate(htmlString)
 
@@ -131,8 +132,8 @@ describe('Joi.htmlInput', () => {
       const joiValidation = joiSchema.validate(htmlString)
       const joiErrorMsg = '"value" length must be at least 23 characters long'
 
-      expect(joiValidation.error).not.toBe(null)
-      expect(joiValidation.error.details.pop().message).toBe(joiErrorMsg)
+      expect(joiValidation.error).not.toBe(undefined)
+      expect(joiValidation.error?.details.pop()?.message).toBe(joiErrorMsg)
       expect(joiValidation.value).toBe(htmlString)
     })
 
@@ -151,19 +152,19 @@ describe('Joi.htmlInput', () => {
       const joiValidation = joiSchema.validate(htmlString)
       const joiErrorMsg = '"value" length must be at least 23 characters long'
 
-      expect(joiValidation.error).not.toBe(null)
-      expect(joiValidation.error.details.pop().message).toBe(joiErrorMsg)
+      expect(joiValidation.error).not.toBe(undefined)
+      expect(joiValidation.error?.details.pop()?.message).toBe(joiErrorMsg)
       expect(joiValidation.value).toBe(htmlString)
     })
 
     it('should enforce a minimum using byte count', () => {
-      const htmlString = '<p>Test \u00A9</p>'
+      const htmlString = '<p>Test ©</p>'
       const joiSchema = Joi.htmlInput().displayMin(8, 'utf8')
       const joiValidation = joiSchema.validate(htmlString)
       const joiErrorMsg = '"value" length must be at least 8 characters long'
 
-      expect(joiValidation.error).not.toBe(null)
-      expect(joiValidation.error.details.pop().message).toBe(joiErrorMsg)
+      expect(joiValidation.error).not.toBe(undefined)
+      expect(joiValidation.error?.details.pop()?.message).toBe(joiErrorMsg)
       expect(joiValidation.value).toBe(htmlString)
     })
   })
@@ -193,8 +194,8 @@ describe('Joi.htmlInput', () => {
       const joiValidation = joiSchema.validate(htmlString)
       const joiErrorMsg = '"value" length must be less than or equal to 21 characters long'
 
-      expect(joiValidation.error).not.toBe(null)
-      expect(joiValidation.error.details.pop().message).toBe(joiErrorMsg)
+      expect(joiValidation.error).not.toBe(undefined)
+      expect(joiValidation.error?.details.pop()?.message).toBe(joiErrorMsg)
       expect(joiValidation.value).toBe(htmlString)
     })
 
@@ -208,12 +209,35 @@ describe('Joi.htmlInput', () => {
     })
 
     it('should enforce a maximum using byte count', () => {
-      const htmlString = '<p>Test \u00A9</p>'
-      const joiSchema = Joi.htmlInput().displayLength(7, 'utf8')
-      const joiValidation = joiSchema.validate(htmlString)
+      // 'Test ©' is 6 characters but 7 bytes in utf8.
+      const htmlString = '<p>Test ©</p>'
+
+      expect(Joi.htmlInput().displayMax(7, 'utf8').validate(htmlString).error).toBe(undefined)
+
+      const joiValidation = Joi.htmlInput().displayMax(6, 'utf8').validate(htmlString)
+      const joiErrorMsg = '"value" length must be less than or equal to 6 characters long'
+
+      expect(joiValidation.error).not.toBe(undefined)
+      expect(joiValidation.error?.details.pop()?.message).toBe(joiErrorMsg)
+      expect(joiValidation.value).toBe(htmlString)
+    })
+  })
+
+  describe('rule chaining', () => {
+    it('should apply sanitisation before the length rules see the value', () => {
+      const dirtyHtmlString = '<p>Hello <script>alert(1)</script></p>'
+      const joiSchema = Joi.htmlInput().allowedTags().displayMax(6)
+      const joiValidation = joiSchema.validate(dirtyHtmlString)
 
       expect(joiValidation.error).toBe(undefined)
-      expect(joiValidation.value).toBe(htmlString)
+      expect(joiValidation.value).toBe('<p>Hello </p>')
+    })
+
+    it('should reject a non-string value using the base string type', () => {
+      const joiValidation = Joi.htmlInput().validate(42)
+
+      expect(joiValidation.error).not.toBe(undefined)
+      expect(joiValidation.error?.details.pop()?.message).toBe('"value" must be a string')
     })
   })
 })

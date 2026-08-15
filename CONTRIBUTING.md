@@ -8,8 +8,10 @@ Broadly I follow the angular commit message format the details of which can be f
 
 ## Code style
 
-I use 2 spaces for indentaion and this project is written in ES6 but basically just follow the existing code style and I'll be happy.
+This project is written in TypeScript and uses npm. Style is enforced by ESLint — 2 space indentation, single quotes and no semicolons — so run `npm run lint` (or `npm run lint:fix`) and follow the existing code style and I'll be happy.
 
 ## Tests
 
-If you want to contribute to the project please make sure all tests pass before making your pull request on github. If you are adding new functionality please ensure that you have added tests to covert your new feature.
+If you want to contribute to the project please make sure all tests pass before making your pull request on github. If you are adding new functionality please ensure that you have added tests to cover your new feature.
+
+`npm test` runs the whole suite against every supported Joi major, and `npm run verify` runs the lint, typecheck, test and build steps together — that is the same set of checks a pull request needs to pass.
