@@ -2,6 +2,15 @@
 
 A [Joi](https://www.npmjs.com/package/joi) extension for sanitizing and validating html inputs.
 
+It does two things Joi's built in string rules cannot:
+
+- **Sanitizes** html, stripping any tags and attributes you have not allowed.
+- **Measures html by what the reader sees**, so `I like <strong>soup</strong>` counts as 11 characters rather than 28.
+
+```js
+Joi.htmlInput().allowedTags().displayMax(280)
+```
+
 Ships as both ESM and CommonJS with bundled TypeScript types.
 
 
@@ -112,17 +121,28 @@ console.log(results)
 ```
 
 
-## Additional Methods
+## Display Length Methods
 
-`.htmlInput()` extends the builtin `Joi.string()` method so you can use any of the built in string methods including `.length()`, `.min()` and `.max()` and they will work the same as you would expect when using `Joi.string()`. These could be useful if you want to validate the maximum length of a string so that you don't exceed a character limit in your database. However you may run into problems if you are using a WYSIWYG editor like TinyMCE or CKEditor and want to set a character limit but you don't want the generated html for bulletpoints, links or styling to count towards that character limit.
+`.htmlInput()` extends the builtin `Joi.string()`, so every string method you already know — `.length()`, `.min()`, `.max()` — behaves exactly as it does on `Joi.string()`. Those measure the raw string with the markup included, which is what you want for something like a database column limit.
 
-To help you validate your HTML strings based on the actual length they will be when displayed in the browser `.htmlInput()` provides several methods. These methods will also account for html entities such as `&nbsp;` so that they only count as a single character.
+That is usually the wrong measure for a user facing character limit. When someone types into a WYSIWYG editor like TinyMCE or CKEditor, the markup behind their bullet points, links and styling is invisible to them — making a word bold should not cost them 17 characters.
 
-The tag stripping for these methods is provided by [sanitize-html](https://www.npmjs.com/package/sanitize-html) and the decoding of HTML entities is provided by [html-entities](https://www.npmjs.com/package/html-entities).
+The display methods measure what the reader actually sees. Tags are stripped and html entities are decoded before counting, so every one of these is 11 characters long:
+
+| Value | `.length` | display length |
+| --- | --- | --- |
+| `I like soup` | 11 | **11** |
+| `I like <strong>soup</strong>` | 28 | **11** |
+| `I&nbsp;like&nbsp;soup` | 21 | **11** |
+| `<p>I like <strong><em>soup</em></strong></p>` | 44 | **11** |
+
+The value itself is never modified by these methods. Formatting is preserved; only the measurement ignores it.
+
+Tag stripping is provided by [sanitize-html](https://www.npmjs.com/package/sanitize-html) and entity decoding by [html-entities](https://www.npmjs.com/package/html-entities).
 
 ### .displayLength(limit, [encoding])
 
-Validates the length of a string ignoring HTML tags and converting HTML entities to characters. The return value remains unchanged.
+Requires the display length to be exactly `limit`.
 
 ```js
 const htmlString = '<div><h1 class="align-center">Test&nbsp;Heading</h1></div>'
@@ -138,7 +158,7 @@ console.log(results)
 
 ### .displayMin(limit, [encoding])
 
-Validates the minimum number of characters in a string ignoring HTML tags and converting HTML entities to characters. The return value remains unchanged.
+Requires the display length to be at least `limit`.
 
 ```js
 const htmlString = '<div><h1 class="align-center">Test&nbsp;Heading</h1></div>'
@@ -154,7 +174,7 @@ console.log(results)
 
 ### .displayMax(limit, [encoding])
 
-Validates the maximum number of characters in a string ignoring HTML tags and converting HTML entities to characters. The return value remains unchanged.
+Requires the display length to be at most `limit`.
 
 ```js
 const htmlString = '<div><h1 class="align-center">Test&nbsp;Heading</h1></div>'
@@ -239,6 +259,45 @@ console.log(results)
 ```
 
 
+## Security notes
+
+### Sanitizing and measuring are separate jobs
+
+- `.allowedTags()` **sanitizes** — it returns a cleaned value.
+- `.displayLength()`, `.displayMin()` and `.displayMax()` **measure** — they strip tags internally to count characters, then return your value untouched, formatting intact.
+
+That separation is deliberate: you would not want a length check quietly rewriting the user's formatting. It does mean a schema with only a length rule validates the length and passes the original input straight through.
+
+```js
+// Length checked, value returned as-is
+Joi.htmlInput().displayMax(280)
+
+// Sanitized, length checked, and bounded for storage
+Joi.htmlInput().allowedTags().displayMax(280).max(2000)
+```
+
+Order does not affect the result — `.displayMax(280).allowedTags()` produces the same sanitized value — but `.allowedTags()` does need to be in the chain.
+
+### Options that switch sanitization off
+
+The options object goes straight to sanitize-html, so two values disable filtering entirely:
+
+- `{ allowedTags: false }` — allows **every** tag, including `<script>`. sanitize-html warns when you list `'script'` explicitly, but it does **not** warn for `false`.
+- `{ allowedAttributes: false }` — allows every attribute, including `onerror` and `onload`.
+
+Only reach for these when the input is already trusted.
+
+Partial options are safe. sanitize-html keeps its own defaults for any key you leave out, so `{ allowedTags: ['a'] }` still blocks `javascript:` URLs via the default `allowedSchemes`. Misspelled keys are rejected rather than ignored, so a typo cannot silently drop a restriction you meant to apply.
+
+### Bounding stored size
+
+Markup does not count toward the display length, so a value can pass `.displayMax(10)` and still be kilobytes of `<p></p>`. Add a plain `.max()` when the limit you care about is storage rather than what the user sees.
+
+### Sanitize on output too
+
+Sanitizing on input is one layer, not the whole defence. Escape or sanitize again at the point you render, according to the context you are rendering into, and set a Content Security Policy. This package cannot know where its output ends up.
+
+
 ## Migrating from v2
 
 Version 3 is a breaking release. The validation rules themselves are unchanged — only how you install and import the package.
@@ -280,48 +339,6 @@ Some dependency versions are pinned on purpose and should not be bumped without 
 - **`joi-v17`** intentionally tracks Joi 17 for the compatibility test run.
 
 Builds are checked with [publint](https://publint.dev) and [Are the Types Wrong?](https://arethetypeswrong.github.io) so that packaging problems fail the build rather than a release.
-
-
-## Security notes
-
-Please read this section before relying on this package to make untrusted input safe.
-
-### `allowedTags()` is the only rule that sanitizes
-
-`.displayLength()`, `.displayMin()` and `.displayMax()` strip tags and decode entities **only in order to measure the value**. They return the input unchanged, exactly as documented above. A schema like this validates the length but hands your back-end the raw input, `<script>` tags and all:
-
-```js
-// NOT sanitized — the value is returned untouched
-Joi.htmlInput().displayMax(280)
-```
-
-If you want a safe value out, call `.allowedTags()`:
-
-```js
-// Sanitized, then length checked
-Joi.htmlInput().allowedTags().displayMax(280).max(2000)
-```
-
-Rule order does not matter for safety — `.displayMax(280).allowedTags()` produces the same sanitized value — but including `.allowedTags()` at all does.
-
-### Options that switch sanitization off
-
-Because the options object is passed straight to sanitize-html, two values disable protection entirely:
-
-- `{ allowedTags: false }` — allows **every** tag, including `<script>`. sanitize-html warns when you list `'script'` explicitly in `allowedTags`, but it does **not** warn for `false`.
-- `{ allowedAttributes: false }` — allows every attribute, including `onerror`, `onload` and friends.
-
-Only use these if the input is already trusted.
-
-Supplying a partial options object is safe: sanitize-html keeps its own defaults for any key you leave out, so `{ allowedTags: ['a'] }` still blocks `javascript:` URLs via the default `allowedSchemes`.
-
-### Bounding stored size
-
-Markup does not count toward the display length, so a value can pass `.displayMax(10)` and still be many kilobytes of `<p></p>`. Pair the display rules with a plain `.max()` when the limit you care about is storage rather than what the user sees.
-
-### Sanitize on output too
-
-Sanitizing on input is one layer, not the whole defence. Escape or sanitize again at the point you render, according to the context you are rendering into, and set a Content Security Policy. This package cannot know where its output ends up.
 
 
 ## Disclaimer
