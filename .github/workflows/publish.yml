@@ -58,13 +58,23 @@ jobs:
       # prepublishOnly runs the build, which is also where publint and
       # are-the-types-wrong run, so a bad package cannot be published.
       #
-      # NPM_TOKEN has to be a token that is exempt from the two factor prompt:
-      # a classic *automation* token, or a granular access token with
-      # read/write on this package. A classic *publish* token authenticates
-      # fine but the registry still demands a one-time password, and since a
-      # runner has no TTY npm cannot prompt and fails with EOTP. Check the
-      # package's publishing access setting too — the strictest option
-      # disallows tokens altogether, which no CI token can satisfy.
+      # Authentication should be trusted publishing (OIDC), not a token.
+      # Register this repository and this workflow filename as a trusted
+      # publisher for the package on npmjs.com; npm then exchanges the Actions
+      # OIDC token for a short lived credential by itself, using the
+      # id-token: write permission already granted above for provenance. There
+      # is nothing to add here — npm attempts OIDC automatically on GitHub
+      # Actions and falls back silently when the registry has no trusted
+      # publisher configured, so it is safe to leave the token in place until
+      # OIDC is confirmed working, then delete the secret and the env below.
+      #
+      # NPM_TOKEN is the fallback and is on the way out. npm is removing direct
+      # publishing from 2FA-bypass tokens around January 2027, after which they
+      # can only stage a publish for a human to approve. A token also has to be
+      # one that skips the 2FA prompt at all — a classic automation token or a
+      # granular access token — because a classic publish token authenticates
+      # but then gets asked for a one-time password, and a runner has no TTY to
+      # answer it, which fails with EOTP.
       - if: steps.check.outputs.publish == 'true'
         run: npm publish --provenance --access public
         env:
