@@ -317,28 +317,9 @@ Version 3 is a breaking release. The validation rules themselves are unchanged �
   The rest of the usage — `Joi.extend(htmlInput)` and every rule — is the same.
 
 
-## Development
+## Contributing
 
-The repo uses npm. Published releases work with npm, yarn or pnpm.
-
-```console
-$ npm install
-$ npm test        # runs the suite against both Joi 17 and Joi 18
-$ npm run lint
-$ npm run typecheck
-$ npm run build
-$ npm run verify  # all of the above
-```
-
-The test suite runs every test twice, once per supported Joi major. Joi 18 is the normal `joi` devDependency and Joi 17 is installed alongside it under the `joi-v17` alias.
-
-Some dependency versions are pinned on purpose and should not be bumped without checking:
-
-- **`typescript` is held at 6.x** because `typescript-eslint` does not yet support TypeScript 7. Bump both together once it does.
-- **`@types/node` is held at 22.x** to match the minimum supported Node version, so the typecheck catches accidental use of newer APIs.
-- **`joi-v17`** intentionally tracks Joi 17 for the compatibility test run.
-
-Builds are checked with [publint](https://publint.dev) and [Are the Types Wrong?](https://arethetypeswrong.github.io) so that packaging problems fail the build rather than a release.
+Bug reports and pull requests are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for how to get set up, run the tests and format your commits. Please report security vulnerabilities privately rather than in a public issue.
 
 
 ## Disclaimer

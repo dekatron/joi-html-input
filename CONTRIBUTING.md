@@ -1,17 +1,72 @@
 # Contributing to joi-html-input
 
-Contributions are welcome, if you spot any bugs or security issues please let me know by raising an issue on github or by making a pull request to fix the issue.
+Contributions are welcome. If you spot a bug, please raise an issue on GitHub or open a pull request to fix it.
 
-## Commit messages
+**Please don't open a public issue for a security vulnerability.** Report it privately through [GitHub's private vulnerability reporting](https://github.com/dekatron/joi-html-input/security/advisories/new) instead, so there is a chance to get a fix released before the details are public.
 
-Broadly I follow the angular commit message format the details of which can be found [here](https://github.com/angular/angular.js/blob/master/DEVELOPERS.md#commit-message-format). Basically just write a descriptive commit message that tells me what you're doing and why, additionally please prefix the title with one of the [types](https://github.com/angular/angular.js/blob/master/DEVELOPERS.md#type) listed in the angular commit guidelines.
+## Getting started
+
+The repo uses npm, and the toolchain targets the latest Node LTS — `.nvmrc` has the version, so `nvm use` will put you on it.
+
+```console
+$ npm install
+$ npm test        # the whole suite, against every supported Joi major
+$ npm run lint    # npm run lint:fix to autofix
+$ npm run typecheck
+$ npm run build
+$ npm run verify  # all of the above, in one go
+```
+
+`npm run verify` is the same set of checks a pull request needs to pass, so running it before you push is the quickest way to know you're green.
 
 ## Code style
 
-This project is written in TypeScript and uses npm. Style is enforced by ESLint — 2 space indentation, single quotes and no semicolons — so run `npm run lint` (or `npm run lint:fix`) and follow the existing code style and I'll be happy.
+This project is written in TypeScript. Style is enforced by ESLint — 2 space indentation, single quotes and no semicolons — so run `npm run lint` (or `npm run lint:fix`) and follow the existing code style and I'll be happy.
 
 ## Tests
 
-If you want to contribute to the project please make sure all tests pass before making your pull request on github. If you are adding new functionality please ensure that you have added tests to cover your new feature.
+Please make sure all tests pass before making your pull request on GitHub. If you are adding new functionality please ensure that you have added tests to cover your new feature.
 
-`npm test` runs the whole suite against every supported Joi major, and `npm run verify` runs the lint, typecheck, test and build steps together — that is the same set of checks a pull request needs to pass.
+A few things worth knowing about the suite:
+
+- Every test runs once per supported Joi major. Joi 18 is the normal `joi` devDependency and Joi 17 is installed alongside it under the `joi-v17` alias, so a single `npm test` covers both.
+- `test/security.spec.ts` pins the sanitization guarantees the package makes **and** the places where it deliberately makes none — for example that `displayMax()` returns the value unchanged. If a change makes one of those non-guarantees into a guarantee that is welcome, but please update the test so it stays a deliberate decision rather than a silent drift.
+- Builds are checked with [publint](https://publint.dev) and [Are the Types Wrong?](https://arethetypeswrong.github.io), so packaging mistakes fail the build rather than a release.
+
+## Commit messages
+
+This project follows [Conventional Commits 1.0.0](https://www.conventionalcommits.org/en/v1.0.0/):
+
+```
+<type>[optional scope]: <description>
+
+[optional body]
+
+[optional footer(s)]
+```
+
+Use `feat:` when you add a feature and `fix:` when you patch a bug — those two are the ones that drive minor and patch version bumps. Otherwise use whichever of `build:`, `chore:`, `ci:`, `docs:`, `perf:`, `refactor:`, `style:` or `test:` fits best. A scope is optional and goes in parentheses after the type.
+
+Mark a breaking change either with a `!` before the colon or with a `BREAKING CHANGE:` footer, which has to be in capitals. Either one means the next release is a major.
+
+```
+docs: fix typo in displayMax example
+
+fix(allowedTags): reject misspelled sanitize-html options
+
+feat!: require joi 18
+
+feat: drop support for node 16
+
+BREAKING CHANGE: the minimum supported node version is now 22.12
+```
+
+Past that, just write a descriptive message that tells me what you're doing and why.
+
+## Dependency versions pinned on purpose
+
+Some versions are held back deliberately and shouldn't be bumped without checking:
+
+- **`typescript` is held at 6.x** because `typescript-eslint` does not yet support TypeScript 7. Bump both together once it does.
+- **`@types/node` is held at 22.x** to match the minimum supported Node version, so the typecheck catches accidental use of newer APIs.
+- **`joi-v17`** intentionally tracks Joi 17 for the compatibility test run.
