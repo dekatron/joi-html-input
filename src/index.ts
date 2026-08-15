@@ -82,10 +82,17 @@ export const htmlInput: ExtensionFactory = (joi: Root): Extension => ({
       args: [
         {
           name: 'options',
-          assert: joi.object().keys({
-            allowedTags: joi.array().items(joi.string()),
-            allowedAttributes: joi.object(),
-          }),
+          // The options object is handed straight to sanitize-html, so anything
+          // it accepts has to be allowed through. The two most commonly used
+          // keys are still shape-checked to catch typos early; sanitize-html
+          // validates the rest itself.
+          assert: joi
+            .object()
+            .keys({
+              allowedTags: joi.alternatives().try(joi.array().items(joi.string()), joi.valid(false)),
+              allowedAttributes: joi.alternatives().try(joi.object(), joi.valid(false)),
+            })
+            .unknown(true),
         },
       ],
       validate (value: string, _helpers: CustomHelpers, args: AllowedTagsArgs) {

@@ -54,6 +54,31 @@ describe.each(joiVersions)('Joi.htmlInput on $name', ({ Joi }) => {
       expect(joiValidation.value).toBe(cleanHtmlString)
     })
 
+    it('should accept any option sanitize-html supports, not just the two common ones', () => {
+      // These are all valid sanitize-html options and are documented as being
+      // passed straight through, so building the schema must not reject them.
+      expect(() => Joi.htmlInput().allowedTags({ allowedTags: ['a'], allowedSchemes: ['https'] })).not.toThrow()
+      expect(() => Joi.htmlInput().allowedTags({ allowedTags: ['a'], transformTags: { a: 'span' } })).not.toThrow()
+      expect(() => Joi.htmlInput().allowedTags({ allowedTags: ['p'], disallowedTagsMode: 'escape' })).not.toThrow()
+      expect(() => Joi.htmlInput().allowedTags({ allowedTags: false })).not.toThrow()
+      expect(() => Joi.htmlInput().allowedTags({ allowedAttributes: false })).not.toThrow()
+    })
+
+    it('should apply a pass-through option rather than silently ignoring it', () => {
+      const joiSchema = Joi.htmlInput().allowedTags({
+        allowedTags: ['p'],
+        disallowedTagsMode: 'escape',
+      })
+      const joiValidation = joiSchema.validate('<p>Keep</p><b>escape</b>')
+
+      expect(joiValidation.error).toBe(undefined)
+      expect(joiValidation.value).toBe('<p>Keep</p>&lt;b&gt;escape&lt;/b&gt;')
+    })
+
+    it('should still reject a malformed value for a known option', () => {
+      expect(() => Joi.htmlInput().allowedTags({ allowedTags: [1, 2] as unknown as string[] })).toThrow()
+    })
+
     it('should strip tags based on defaults if no parameters are provided', () => {
       const htmlString = '<p>This is a <span>string</span><script>alert(\'test\')</script></p>'
       const joiSchema = Joi.htmlInput().allowedTags()
