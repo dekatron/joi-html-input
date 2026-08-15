@@ -188,8 +188,8 @@ export const htmlInput: ExtensionFactory = (joi: Root): Extension => ({
       method (expectedLength: number, encoding?: DisplayEncoding) {
         return this.$_addRule({ name: 'displayLength', args: { expectedLength, encoding } })
       },
-      args: [
-        { name: 'expectedLength', assert: joi.number().positive().required() },
+args: [
+        { name: 'expectedLength', assert: joi.number().integer().min(0).required() },
         { name: 'encoding', assert: encodingArg(joi) },
       ],
       validate (value: string, helpers: CustomHelpers, args: LengthArgs) {
