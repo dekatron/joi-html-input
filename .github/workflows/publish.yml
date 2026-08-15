@@ -57,10 +57,24 @@ jobs:
 
       # prepublishOnly runs the build, which is also where publint and
       # are-the-types-wrong run, so a bad package cannot be published.
+      #
+      # Authentication is trusted publishing (OIDC). npm attempts it
+      # automatically on GitHub Actions, exchanging the Actions OIDC token for a
+      # short lived credential using the id-token: write permission granted
+      # above, so there is no token to configure and no secret to store. It
+      # requires this repository and this workflow filename to be registered as
+      # a trusted publisher for the package on npmjs.com.
+      #
+      # There is deliberately no NPM_TOKEN fallback. npm logs the whole OIDC
+      # exchange at verbose and silly level, so at the default log level a
+      # fallback would be invisible: a misconfigured trusted publisher would
+      # quietly publish by token instead, look like success, and then break when
+      # npm stops letting 2FA-bypass tokens publish directly around January
+      # 2027. Without a fallback a misconfiguration fails loudly here instead.
+      #
+      # Run this step with --loglevel verbose if you need to see the exchange.
       - if: steps.check.outputs.publish == 'true'
         run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Tag the release
         if: steps.check.outputs.publish == 'true'
