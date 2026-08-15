@@ -1,18 +1,71 @@
-name: Publish To NPM
+name: Publish
+
 on:
   push:
-    branches:
-      - master
+    branches: [main]
   workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  # Never cancel a publish part way through.
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
+  # Run the full CI pipeline against the merge commit before releasing it.
+  ci:
+    uses: ./.github/workflows/ci.yml
+
   publish:
+    name: Publish to npm
+    needs: ci
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # to push the release tag
+      id-token: write # to sign the npm provenance attestation
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
         with:
-          node-version: '16.14.0'
+          node-version-file: .nvmrc
+          cache: npm
           registry-url: https://registry.npmjs.org/
-      - run: yarn publish
+
+      # Every merge to main runs this workflow, but most merges do not bump the
+      # version. Publishing an already published version fails, so check first
+      # and no-op instead of turning main red on ordinary merges.
+      - name: Check whether this version is already published
+        id: check
+        run: |
+          NAME="$(node -p "require('./package.json').name")"
+          VERSION="$(node -p "require('./package.json').version")"
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          if npm view "$NAME@$VERSION" version > /dev/null 2>&1; then
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::$NAME@$VERSION is already on npm - nothing to publish."
+          else
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::$NAME@$VERSION is not on npm yet - publishing."
+          fi
+
+      - if: steps.check.outputs.publish == 'true'
+        run: npm ci
+
+      # prepublishOnly runs the build, which is also where publint and
+      # are-the-types-wrong run, so a bad package cannot be published.
+      - if: steps.check.outputs.publish == 'true'
+        run: npm publish --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Tag the release
+        if: steps.check.outputs.publish == 'true'
+        env:
+          TAG: v${{ steps.check.outputs.version }}
+        run: |
+          git tag "$TAG"
+          git push origin "$TAG"
