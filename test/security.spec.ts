@@ -249,14 +249,16 @@ describe.each(joiVersions)('security: $name', ({ Joi }) => {
       // and style end up allowed and it warns about each of them. Assert the
       // warning rather than letting it print through the test output — it is
       // part of the behaviour worth pinning, not noise.
+      // `\s` rather than `\n`: sanitize-html 2.18 dropped the line break from
+      // the middle of this message, and older 2.x still prints it.
       const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
 
       try {
         expect(Joi.htmlInput().allowedTags({ allowedTags: false }).validate(payload).value).toBe(payload)
 
         const warnings = warn.mock.calls.flat().join('\n')
-        expect(warnings).toMatch(/`script`, which is inherently\nvulnerable to XSS/)
-        expect(warnings).toMatch(/`style`, which is inherently\nvulnerable to XSS/)
+        expect(warnings).toMatch(/`script`, which is inherently\svulnerable to XSS/)
+        expect(warnings).toMatch(/`style`, which is inherently\svulnerable to XSS/)
       }
       finally {
         warn.mockRestore()
